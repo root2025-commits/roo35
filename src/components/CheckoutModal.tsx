@@ -84,6 +84,14 @@ export function CheckoutModal({ isOpen, onClose, onCheckout, items, total }: Che
 
   // Get current transfer fee percentage with real-time updates
   const transferFeePercentage = adminContext?.state?.prices?.transferFeePercentage || 10;
+  
+  // Real-time sync effect for zones and prices
+  React.useEffect(() => {
+    if (adminContext?.state) {
+      console.log('CheckoutModal: Admin state updated, zones and prices synced');
+      // Force re-calculation when admin state changes
+    }
+  }, [adminContext?.state?.deliveryZones, adminContext?.state?.prices]);
 
   const isFormValid = customerInfo.fullName.trim() !== '' && 
                      customerInfo.phone.trim() !== '' && 

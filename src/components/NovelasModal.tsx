@@ -33,6 +33,19 @@ export function NovelasModal({ isOpen, onClose }: NovelasModalProps) {
   const novelPricePerChapter = adminContext?.state?.prices?.novelPricePerChapter || 5;
   const transferFeePercentage = adminContext?.state?.prices?.transferFeePercentage || 10;
   
+  // Real-time sync effect for novels and prices
+  React.useEffect(() => {
+    if (adminContext?.state) {
+      console.log('NovelasModal: Admin state updated, novels and prices synced');
+      // Update local state when admin state changes
+      const novelasWithDefaultPayment = allNovelas.map(novela => ({
+        ...novela,
+        paymentType: 'cash' as const
+      }));
+      setNovelasWithPayment(novelasWithDefaultPayment);
+    }
+  }, [adminContext?.state?.novels, adminContext?.state?.prices]);
+  
   // Base novels list
   const defaultNovelas: Novela[] = [
     { id: 1, titulo: "Corazón Salvaje", genero: "Drama/Romance", capitulos: 185, año: 2009 },
