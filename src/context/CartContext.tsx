@@ -204,13 +204,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const seriesPrice = adminContext?.state?.prices?.seriesPrice || 300;
     const transferFeePercentage = adminContext?.state?.prices?.transferFeePercentage || 10;
     
-    // Real-time price calculation
-    console.log('CartContext: Calculating price with real-time admin prices', {
-      moviePrice,
-      seriesPrice,
-      transferFeePercentage
-    });
-    
     if (item.type === 'movie') {
       const basePrice = moviePrice;
       return item.paymentType === 'transfer' ? Math.round(basePrice * (1 + transferFeePercentage / 100)) : basePrice;
@@ -232,8 +225,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const seriesPrice = adminContext?.state?.prices?.seriesPrice || 300;
     const transferFeePercentage = adminContext?.state?.prices?.transferFeePercentage || 10;
     
-    console.log('CartContext: Calculating totals by payment type with real-time prices');
-    
     return state.items.reduce((totals, item) => {
       const basePrice = item.type === 'movie' ? moviePrice : (item.selectedSeasons?.length || 1) * seriesPrice;
       if (item.paymentType === 'transfer') {
@@ -244,14 +235,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       return totals;
     }, { cash: 0, transfer: 0 });
   };
-  
-  // Real-time sync effect for price updates
-  React.useEffect(() => {
-    if (adminContext?.state?.prices) {
-      console.log('CartContext: Admin prices updated, recalculating cart totals');
-      // Force re-render when prices change
-    }
-  }, [adminContext?.state?.prices]);
 
   const closeToast = () => {
     setToast(prev => ({ ...prev, isVisible: false }));

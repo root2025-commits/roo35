@@ -1,166 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import JSZip from 'jszip';
 
-// File content templates for real-time sync
-const FILE_TEMPLATES = {
-  AdminContext: (state: AdminState) => `import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import JSZip from 'jszip';
-
-// Interfaces
-export interface PriceConfig {
-  moviePrice: number;
-  seriesPrice: number;
-  transferFeePercentage: number;
-  novelPricePerChapter: number;
-}
-
-export interface DeliveryZone {
-  id: number;
-  name: string;
-  cost: number;
-  active: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Novel {
-  id: number;
-  titulo: string;
-  genero: string;
-  capitulos: number;
-  año: number;
-  descripcion?: string;
-  active: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Notification {
-  id: string;
-  type: 'success' | 'warning' | 'error' | 'info';
-  title: string;
-  message: string;
-  timestamp: string;
-  section: string;
-  action: string;
-}
-
-export interface AdminState {
-  isAuthenticated: boolean;
-  prices: PriceConfig;
-  deliveryZones: DeliveryZone[];
-  novels: Novel[];
-  notifications: Notification[];
-  lastBackup: string | null;
-  syncStatus: {
-    isOnline: boolean;
-    lastSync: string | null;
-    pendingChanges: number;
-  };
-}
-
-// Initial state with current data
-const initialState: AdminState = ${JSON.stringify(state, null, 2)};
-
-// Rest of the AdminContext implementation...
-export function AdminProvider({ children }: { children: React.ReactNode }) {
-  // Implementation continues...
-}
-
-export function useAdmin() {
-  const context = useContext(AdminContext);
-  if (context === undefined) {
-    throw new Error('useAdmin must be used within an AdminProvider');
-  }
-  return context;
-}
-
-export { AdminContext };`,
-
-  PriceCard: (prices: PriceConfig) => `import React from 'react';
-import { DollarSign, Tv, Film, Star, CreditCard } from 'lucide-react';
-import { AdminContext } from '../context/AdminContext';
-
-interface PriceCardProps {
-  type: 'movie' | 'tv';
-  selectedSeasons?: number[];
-  episodeCount?: number;
-  isAnime?: boolean;
-}
-
-export function PriceCard({ type, selectedSeasons = [], episodeCount = 0, isAnime = false }: PriceCardProps) {
-  const adminContext = React.useContext(AdminContext);
-  
-  // Get prices from admin context with real-time updates
-  const moviePrice = adminContext?.state?.prices?.moviePrice || ${prices.moviePrice};
-  const seriesPrice = adminContext?.state?.prices?.seriesPrice || ${prices.seriesPrice};
-  const transferFeePercentage = adminContext?.state?.prices?.transferFeePercentage || ${prices.transferFeePercentage};
-  
-  // Rest of PriceCard implementation...
-}`,
-
-  CheckoutModal: (zones: DeliveryZone[], prices: PriceConfig) => `import React, { useState } from 'react';
-import { X, User, MapPin, Phone, Copy, Check, MessageCircle, Calculator, DollarSign, CreditCard } from 'lucide-react';
-import { AdminContext } from '../context/AdminContext';
-
-// Base delivery zones - these will be combined with admin zones
-const BASE_DELIVERY_ZONES = {
-  'Por favor seleccionar su Barrio/Zona': 0,
-  ${zones.map(zone => `'${zone.name}': ${zone.cost}`).join(',\n  ')},
-};
-
-export function CheckoutModal({ isOpen, onClose, onCheckout, items, total }: CheckoutModalProps) {
-  const adminContext = React.useContext(AdminContext);
-  
-  // Get delivery zones from admin context with real-time updates
-  const adminZones = adminContext?.state?.deliveryZones || [];
-  const transferFeePercentage = adminContext?.state?.prices?.transferFeePercentage || ${prices.transferFeePercentage};
-  
-  // Rest of CheckoutModal implementation...
-}`,
-
-  NovelasModal: (novels: Novel[], prices: PriceConfig) => `import React, { useState, useEffect } from 'react';
-import { X, Download, MessageCircle, Phone, BookOpen, Info, Check, DollarSign, CreditCard, Calculator, Search, Filter, SortAsc, SortDesc } from 'lucide-react';
-import { AdminContext } from '../context/AdminContext';
-
-// Base novels list with current admin novels
-const defaultNovelas: Novela[] = [
-  ${novels.map(novel => `{ id: ${novel.id}, titulo: "${novel.titulo}", genero: "${novel.genero}", capitulos: ${novel.capitulos}, año: ${novel.año}${novel.descripcion ? `, descripcion: "${novel.descripcion}"` : ''} }`).join(',\n  ')},
-];
-
-export function NovelasModal({ isOpen, onClose }: NovelasModalProps) {
-  const adminContext = React.useContext(AdminContext);
-  
-  // Get novels and prices from admin context with real-time updates
-  const adminNovels = adminContext?.state?.novels || [];
-  const novelPricePerChapter = adminContext?.state?.prices?.novelPricePerChapter || ${prices.novelPricePerChapter};
-  const transferFeePercentage = adminContext?.state?.prices?.transferFeePercentage || ${prices.transferFeePercentage};
-  
-  // Rest of NovelasModal implementation...
-}`,
-
-  CartContext: (prices: PriceConfig) => `import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { Toast } from '../components/Toast';
-import { AdminContext } from './AdminContext';
-import type { CartItem } from '../types/movie';
-
-export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [state, dispatch] = useReducer(cartReducer, { items: [], total: 0 });
-  const adminContext = React.useContext(AdminContext);
-  
-  const calculateItemPrice = (item: SeriesCartItem): number => {
-    // Get current prices from admin context with real-time updates
-    const moviePrice = adminContext?.state?.prices?.moviePrice || ${prices.moviePrice};
-    const seriesPrice = adminContext?.state?.prices?.seriesPrice || ${prices.seriesPrice};
-    const transferFeePercentage = adminContext?.state?.prices?.transferFeePercentage || ${prices.transferFeePercentage};
-    
-    // Rest of calculation logic...
-  };
-  
-  // Rest of CartProvider implementation...
-}`
-};
-
 // Interfaces
 export interface PriceConfig {
   moviePrice: number;
@@ -406,72 +246,6 @@ function adminReducer(state: AdminState, action: AdminAction): AdminState {
   }
 }
 
-// File sync service for real-time updates
-class FileSyncService {
-  private static instance: FileSyncService;
-  
-  static getInstance(): FileSyncService {
-    if (!FileSyncService.instance) {
-      FileSyncService.instance = new FileSyncService();
-    }
-    return FileSyncService.instance;
-  }
-  
-  syncFileContent(fileName: string, state: AdminState): void {
-    try {
-      let content = '';
-      
-      switch (fileName) {
-        case 'AdminContext.tsx':
-          content = FILE_TEMPLATES.AdminContext(state);
-          break;
-        case 'PriceCard.tsx':
-          content = FILE_TEMPLATES.PriceCard(state.prices);
-          break;
-        case 'CheckoutModal.tsx':
-          content = FILE_TEMPLATES.CheckoutModal(state.deliveryZones, state.prices);
-          break;
-        case 'NovelasModal.tsx':
-          content = FILE_TEMPLATES.NovelasModal(state.novels, state.prices);
-          break;
-        case 'CartContext.tsx':
-          content = FILE_TEMPLATES.CartContext(state.prices);
-          break;
-      }
-      
-      if (content) {
-        localStorage.setItem(`file_sync_${fileName}`, content);
-        localStorage.setItem(`file_sync_${fileName}_timestamp`, new Date().toISOString());
-      }
-    } catch (error) {
-      console.error(`Error syncing ${fileName}:`, error);
-    }
-  }
-  
-  getSyncedFileContent(fileName: string): string | null {
-    try {
-      return localStorage.getItem(`file_sync_${fileName}`);
-    } catch (error) {
-      console.error(`Error getting synced content for ${fileName}:`, error);
-      return null;
-    }
-  }
-  
-  getAllSyncedFiles(): { [fileName: string]: string } {
-    const files: { [fileName: string]: string } = {};
-    const fileNames = ['AdminContext.tsx', 'PriceCard.tsx', 'CheckoutModal.tsx', 'NovelasModal.tsx', 'CartContext.tsx'];
-    
-    fileNames.forEach(fileName => {
-      const content = this.getSyncedFileContent(fileName);
-      if (content) {
-        files[fileName] = content;
-      }
-    });
-    
-    return files;
-  }
-}
-
 // Context creation
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
 
@@ -568,7 +342,6 @@ class RealTimeSyncService {
 export function AdminProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(adminReducer, initialState);
   const [syncService] = React.useState(() => new RealTimeSyncService());
-  const fileSyncService = FileSyncService.getInstance();
 
   // Load initial state from localStorage
   useEffect(() => {
@@ -588,16 +361,10 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     try {
       localStorage.setItem('admin_system_state', JSON.stringify(state));
       syncService.broadcast(state);
-      
-      // Sync file contents in real-time
-      const filesToSync = ['AdminContext.tsx', 'PriceCard.tsx', 'CheckoutModal.tsx', 'NovelasModal.tsx', 'CartContext.tsx'];
-      filesToSync.forEach(fileName => {
-        fileSyncService.syncFileContent(fileName, state);
-      });
     } catch (error) {
       console.error('Error saving state:', error);
     }
-  }, [state, syncService, fileSyncService]);
+  }, [state, syncService]);
 
   // Subscribe to real-time updates
   useEffect(() => {
@@ -650,7 +417,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     addNotification({
       type: 'success',
       title: 'Precios actualizados',
-      message: 'Los precios se han actualizado correctamente y se han sincronizado en tiempo real',
+      message: `Precios actualizados: Películas $${prices.moviePrice} CUP, Series $${prices.seriesPrice} CUP, Transferencia ${prices.transferFeePercentage}%, Novelas $${prices.novelPricePerChapter} CUP/cap. Sincronizado en tiempo real en CheckoutModal.tsx, NovelasModal.tsx y PriceCard.tsx`,
       section: 'Precios',
       action: 'update'
     });
@@ -662,7 +429,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     addNotification({
       type: 'success',
       title: 'Zona de entrega agregada',
-      message: `Se agregó la zona "${zone.name}" y se sincronizó automáticamente`,
+      message: `Nueva zona agregada: "${zone.name}" con costo $${zone.cost} CUP. Sincronizada automáticamente en CheckoutModal.tsx y disponible para todos los pedidos`,
       section: 'Zonas de Entrega',
       action: 'create'
     });
@@ -674,7 +441,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     addNotification({
       type: 'success',
       title: 'Zona de entrega actualizada',
-      message: `Se actualizó la zona "${zone.name}" y se sincronizó en tiempo real`,
+      message: `Zona actualizada: "${zone.name}" ahora cuesta $${zone.cost} CUP. Cambios aplicados en tiempo real en CheckoutModal.tsx`,
       section: 'Zonas de Entrega',
       action: 'update'
     });
@@ -687,7 +454,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     addNotification({
       type: 'warning',
       title: 'Zona de entrega eliminada',
-      message: `Se eliminó la zona "${zone?.name || 'Desconocida'}" y se sincronizó automáticamente`,
+      message: `Zona eliminada: "${zone?.name || 'Desconocida'}". Removida automáticamente de CheckoutModal.tsx y ya no está disponible para nuevos pedidos`,
       section: 'Zonas de Entrega',
       action: 'delete'
     });
@@ -699,7 +466,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     addNotification({
       type: 'success',
       title: 'Novela agregada',
-      message: `Se agregó la novela "${novel.titulo}" y se sincronizó automáticamente`,
+      message: `Nueva novela agregada: "${novel.titulo}" (${novel.año}) - ${novel.capitulos} capítulos, género ${novel.genero}. Costo: $${novel.capitulos * state.prices.novelPricePerChapter} CUP. Sincronizada en NovelasModal.tsx`,
       section: 'Gestión de Novelas',
       action: 'create'
     });
@@ -711,7 +478,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     addNotification({
       type: 'success',
       title: 'Novela actualizada',
-      message: `Se actualizó la novela "${novel.titulo}" y se sincronizó en tiempo real`,
+      message: `Novela actualizada: "${novel.titulo}" - ${novel.capitulos} capítulos, ${novel.genero} (${novel.año}). Nuevo costo: $${novel.capitulos * state.prices.novelPricePerChapter} CUP. Cambios aplicados en NovelasModal.tsx`,
       section: 'Gestión de Novelas',
       action: 'update'
     });
@@ -724,7 +491,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     addNotification({
       type: 'warning',
       title: 'Novela eliminada',
-      message: `Se eliminó la novela "${novel?.titulo || 'Desconocida'}" y se sincronizó automáticamente`,
+      message: `Novela eliminada: "${novel?.titulo || 'Desconocida'}" (${novel?.capitulos || 0} capítulos). Removida automáticamente del catálogo en NovelasModal.tsx`,
       section: 'Gestión de Novelas',
       action: 'delete'
     });
@@ -808,580 +575,365 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       const zip = new JSZip();
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       
-      // Crear estructura de carpetas
+      // Crear estructura de carpetas completa
       const srcFolder = zip.folder('src');
       const componentsFolder = srcFolder!.folder('components');
       const contextFolder = srcFolder!.folder('context');
       const pagesFolder = srcFolder!.folder('pages');
       const servicesFolder = srcFolder!.folder('services');
       const utilsFolder = srcFolder!.folder('utils');
-      const typesFolder = srcFolder!.folder('types');
       const hooksFolder = srcFolder!.folder('hooks');
+      const typesFolder = srcFolder!.folder('types');
       const configFolder = srcFolder!.folder('config');
       const publicFolder = zip.folder('public');
 
-      // Get synced file contents with real-time data
-      const syncedFiles = fileSyncService.getAllSyncedFiles();
-      
-      // Add synced files with current state
-      Object.entries(syncedFiles).forEach(([fileName, content]) => {
-        if (fileName.includes('Context.tsx')) {
-          contextFolder!.file(fileName, content);
-        } else {
-          componentsFolder!.file(fileName, content);
-        }
-      });
+      // Generar AdminContext.tsx con estado actual sincronizado
+      const adminContextContent = `import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import JSZip from 'jszip';
 
-      // Add all other system files with current implementations
-      
-      // Components
-      componentsFolder!.file('CartAnimation.tsx', `import React, { useEffect, useState } from 'react';
-import { ShoppingCart, Check, Plus, Sparkles } from 'lucide-react';
-
-interface CartAnimationProps {
-  show: boolean;
-  onComplete: () => void;
+// Interfaces
+export interface PriceConfig {
+  moviePrice: number;
+  seriesPrice: number;
+  transferFeePercentage: number;
+  novelPricePerChapter: number;
 }
 
-export function CartAnimation({ show, onComplete }: CartAnimationProps) {
-  const [stage, setStage] = useState<'hidden' | 'flying' | 'sparkle' | 'success' | 'complete'>('hidden');
-
-  useEffect(() => {
-    if (show) {
-      setStage('flying');
-      
-      const timer1 = setTimeout(() => {
-        setStage('sparkle');
-      }, 800);
-
-      const timer2 = setTimeout(() => {
-        setStage('success');
-      }, 1200);
-
-      const timer3 = setTimeout(() => {
-        setStage('complete');
-        onComplete();
-      }, 2000);
-
-      return () => {
-        clearTimeout(timer1);
-        clearTimeout(timer2);
-        clearTimeout(timer3);
-      };
-    } else {
-      setStage('hidden');
-    }
-  }, [show, onComplete]);
-
-  if (stage === 'hidden' || stage === 'complete') return null;
-
-  return (
-    <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center overflow-hidden">
-      {/* Animation implementation */}
-    </div>
-  );
-}`);
-
-      componentsFolder!.file('CastSection.tsx', `import React from 'react';
-import { Users, Star } from 'lucide-react';
-import { IMAGE_BASE_URL } from '../config/api';
-import type { CastMember } from '../types/movie';
-
-interface CastSectionProps {
-  cast: CastMember[];
-  title?: string;
+export interface DeliveryZone {
+  id: number;
+  name: string;
+  cost: number;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export function CastSection({ cast, title = "Reparto Principal" }: CastSectionProps) {
-  // Implementation
-}`);
+export interface Novel {
+  id: number;
+  titulo: string;
+  genero: string;
+  capitulos: number;
+  año: number;
+  descripcion?: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
 
-      componentsFolder!.file('ErrorMessage.tsx', `import React from 'react';
-import { AlertCircle } from 'lucide-react';
-
-interface ErrorMessageProps {
+export interface Notification {
+  id: string;
+  type: 'success' | 'warning' | 'error' | 'info';
+  title: string;
   message: string;
+  timestamp: string;
+  section: string;
+  action: string;
 }
 
-export function ErrorMessage({ message }: ErrorMessageProps) {
-  return (
-    <div className="flex flex-col items-center justify-center py-12 px-4">
-      <AlertCircle className="h-16 w-16 text-red-500 mb-4" />
-      <h3 className="text-lg font-semibold text-gray-900 mb-2">¡Oops! Algo salió mal</h3>
-      <p className="text-gray-600 text-center max-w-md">{message}</p>
-    </div>
-  );
-}`);
-
-      componentsFolder!.file('Header.tsx', `import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Search, ShoppingCart, Film } from 'lucide-react';
-import { useCart } from '../context/CartContext';
-
-export function Header() {
-  // Header implementation with real-time cart updates
-}`);
-
-      componentsFolder!.file('HeroCarousel.tsx', `import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Star, Calendar, Play, Pause } from 'lucide-react';
-import { tmdbService } from '../services/tmdb';
-import { contentSyncService } from '../services/contentSync';
-import { IMAGE_BASE_URL, BACKDROP_SIZE } from '../config/api';
-import type { Movie, TVShow, Video } from '../types/movie';
-
-interface HeroCarouselProps {
-  items: (Movie | TVShow)[];
+export interface AdminState {
+  isAuthenticated: boolean;
+  prices: PriceConfig;
+  deliveryZones: DeliveryZone[];
+  novels: Novel[];
+  notifications: Notification[];
+  lastBackup: string | null;
+  syncStatus: {
+    isOnline: boolean;
+    lastSync: string | null;
+    pendingChanges: number;
+  };
 }
 
-export function HeroCarousel({ items }: HeroCarouselProps) {
-  // HeroCarousel implementation
-}`);
+// Actions
+type AdminAction =
+  | { type: 'LOGIN'; payload: { username: string; password: string } }
+  | { type: 'LOGOUT' }
+  | { type: 'UPDATE_PRICES'; payload: PriceConfig }
+  | { type: 'ADD_DELIVERY_ZONE'; payload: Omit<DeliveryZone, 'id' | 'createdAt' | 'updatedAt'> }
+  | { type: 'UPDATE_DELIVERY_ZONE'; payload: DeliveryZone }
+  | { type: 'DELETE_DELIVERY_ZONE'; payload: number }
+  | { type: 'ADD_NOVEL'; payload: Omit<Novel, 'id' | 'createdAt' | 'updatedAt'> }
+  | { type: 'UPDATE_NOVEL'; payload: Novel }
+  | { type: 'DELETE_NOVEL'; payload: number }
+  | { type: 'ADD_NOTIFICATION'; payload: Omit<Notification, 'id' | 'timestamp'> }
+  | { type: 'CLEAR_NOTIFICATIONS' }
+  | { type: 'UPDATE_SYNC_STATUS'; payload: Partial<AdminState['syncStatus']> }
+  | { type: 'SYNC_STATE'; payload: Partial<AdminState> };
 
-      componentsFolder!.file('LoadingSpinner.tsx', `import React from 'react';
-
-export function LoadingSpinner() {
-  return (
-    <div className="flex justify-center items-center py-12">
-      <div className="relative">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        <div className="animate-spin rounded-full h-12 w-12 border-r-2 border-blue-400 absolute top-0 left-0 animation-delay-75"></div>
-      </div>
-    </div>
-  );
-}`);
-
-      componentsFolder!.file('MovieCard.tsx', `import React from 'react';
-import { Link } from 'react-router-dom';
-import { Star, Calendar, Plus, Check } from 'lucide-react';
-import { IMAGE_BASE_URL, POSTER_SIZE } from '../config/api';
-import { useCart } from '../context/CartContext';
-import { CartAnimation } from './CartAnimation';
-import type { Movie, TVShow, CartItem } from '../types/movie';
-
-interface MovieCardProps {
-  item: Movie | TVShow;
-  type: 'movie' | 'tv';
+// Context
+interface AdminContextType {
+  state: AdminState;
+  login: (username: string, password: string) => boolean;
+  logout: () => void;
+  updatePrices: (prices: PriceConfig) => void;
+  addDeliveryZone: (zone: Omit<DeliveryZone, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  updateDeliveryZone: (zone: DeliveryZone) => void;
+  deleteDeliveryZone: (id: number) => void;
+  addNovel: (novel: Omit<Novel, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  updateNovel: (novel: Novel) => void;
+  deleteNovel: (id: number) => void;
+  addNotification: (notification: Omit<Notification, 'id' | 'timestamp'>) => void;
+  clearNotifications: () => void;
+  exportSystemBackup: () => void;
+  syncWithRemote: () => Promise<void>;
+  broadcastChange: (change: any) => void;
 }
 
-export function MovieCard({ item, type }: MovieCardProps) {
-  // MovieCard implementation with real-time cart integration
-}`);
+// Initial state with current synchronized data
+const initialState: AdminState = {
+  isAuthenticated: false,
+  prices: ${JSON.stringify(state.prices, null, 4)},
+  deliveryZones: ${JSON.stringify(state.deliveryZones, null, 4)},
+  novels: ${JSON.stringify(state.novels, null, 4)},
+  notifications: [],
+  lastBackup: null,
+  syncStatus: {
+    isOnline: true,
+    lastSync: null,
+    pendingChanges: 0,
+  },
+};
 
-      componentsFolder!.file('Toast.tsx', `import React, { useEffect, useState } from 'react';
-import { CheckCircle, XCircle, X, ShoppingCart, Trash2 } from 'lucide-react';
+// [Resto del código del reducer y provider...]
+${getAdminContextImplementation()}
+`;
 
-interface ToastProps {
-  message: string;
-  type: 'success' | 'error';
-  isVisible: boolean;
+      // Generar CheckoutModal.tsx con zonas de entrega actualizadas
+      const checkoutModalContent = `import React, { useState } from 'react';
+import { X, User, MapPin, Phone, Copy, Check, MessageCircle, Calculator, DollarSign, CreditCard } from 'lucide-react';
+import { AdminContext } from '../context/AdminContext';
+
+export interface CustomerInfo {
+  fullName: string;
+  phone: string;
+  address: string;
+}
+
+export interface OrderData {
+  orderId: string;
+  customerInfo: CustomerInfo;
+  deliveryZone: string;
+  deliveryCost: number;
+  items: any[];
+  subtotal: number;
+  transferFee: number;
+  total: number;
+  cashTotal?: number;
+  transferTotal?: number;
+}
+
+interface CheckoutModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onCheckout: (orderData: OrderData) => void;
+  items: any[];
+  total: number;
+}
+
+// Base delivery zones - synchronized with admin panel
+const BASE_DELIVERY_ZONES = {
+  'Por favor seleccionar su Barrio/Zona': 0,
+  'Santiago de Cuba > Santiago de Cuba > Nuevo Vista Alegre': 100,
+  'Santiago de Cuba > Santiago de Cuba > Vista Alegre': 300,
+  'Santiago de Cuba > Santiago de Cuba > Reparto Sueño': 250,
+  'Santiago de Cuba > Santiago de Cuba > San Pedrito': 150,
+  'Santiago de Cuba > Santiago de Cuba > Altamira': 300,
+  'Santiago de Cuba > Santiago de Cuba > Micro 7, 8 , 9': 150,
+  'Santiago de Cuba > Santiago de Cuba > Alameda': 150,
+  'Santiago de Cuba > Santiago de Cuba > El Caney': 800,
+  'Santiago de Cuba > Santiago de Cuba > Quintero': 200,
+  'Santiago de Cuba > Santiago de Cuba > Marimon': 100,
+  'Santiago de Cuba > Santiago de Cuba > Los cangrejitos': 150,
+  'Santiago de Cuba > Santiago de Cuba > Trocha': 200,
+  'Santiago de Cuba > Santiago de Cuba > Versalles': 800,
+  'Santiago de Cuba > Santiago de Cuba > Reparto Portuondo': 600,
+  'Santiago de Cuba > Santiago de Cuba > 30 de Noviembre': 600,
+  'Santiago de Cuba > Santiago de Cuba > Rajayoga': 800,
+  'Santiago de Cuba > Santiago de Cuba > Antonio Maceo': 600,
+  'Santiago de Cuba > Santiago de Cuba > Los Pinos': 200,
+  'Santiago de Cuba > Santiago de Cuba > Distrito José Martí': 100,
+  'Santiago de Cuba > Santiago de Cuba > Cobre': 800,
+  'Santiago de Cuba > Santiago de Cuba > El Parque Céspedes': 200,
+  'Santiago de Cuba > Santiago de Cuba > Carretera del Morro': 300,
+${state.deliveryZones.map(zone => `  '${zone.name}': ${zone.cost},`).join('\n')}
+};
+
+${getCheckoutModalImplementation()}
+`;
+
+      // Generar NovelasModal.tsx con novelas actualizadas
+      const novelasModalContent = `import React, { useState, useEffect } from 'react';
+import { X, Download, MessageCircle, Phone, BookOpen, Info, Check, DollarSign, CreditCard, Calculator, Search, Filter, SortAsc, SortDesc } from 'lucide-react';
+import { AdminContext } from '../context/AdminContext';
+
+interface Novela {
+  id: number;
+  titulo: string;
+  genero: string;
+  capitulos: number;
+  año: number;
+  descripcion?: string;
+  paymentType?: 'cash' | 'transfer';
+}
+
+interface NovelasModalProps {
+  isOpen: boolean;
   onClose: () => void;
 }
 
-export function Toast({ message, type, isVisible, onClose }: ToastProps) {
-  // Toast implementation
-}`);
+export function NovelasModal({ isOpen, onClose }: NovelasModalProps) {
+  const adminContext = React.useContext(AdminContext);
+  const [selectedNovelas, setSelectedNovelas] = useState<number[]>([]);
+  const [novelasWithPayment, setNovelasWithPayment] = useState<Novela[]>([]);
+  const [showNovelList, setShowNovelList] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedGenre, setSelectedGenre] = useState('');
+  const [selectedYear, setSelectedYear] = useState('');
+  const [sortBy, setSortBy] = useState<'titulo' | 'año' | 'capitulos'>('titulo');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
-      componentsFolder!.file('VideoPlayer.tsx', `import React, { useState } from 'react';
-import { ExternalLink, Play, AlertCircle } from 'lucide-react';
-
-interface VideoPlayerProps {
-  videoKey: string;
-  title: string;
-}
-
-export function VideoPlayer({ videoKey, title }: VideoPlayerProps) {
-  // VideoPlayer implementation
-}`);
-
-      // Pages
-      pagesFolder!.file('AdminPanel.tsx', `import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Shield, Settings, DollarSign, MapPin, BookOpen, Download, Bell, Activity } from 'lucide-react';
-import { useAdmin } from '../context/AdminContext';
-import type { PriceConfig, DeliveryZone, Novel } from '../context/AdminContext';
-
-export function AdminPanel() {
-  const { state, login, logout, updatePrices, addDeliveryZone, updateDeliveryZone, deleteDeliveryZone, addNovel, updateNovel, deleteNovel, clearNotifications, exportSystemBackup } = useAdmin();
+  // Get novels and prices from admin context with real-time updates
+  const adminNovels = adminContext?.state?.novels || [];
+  const novelPricePerChapter = adminContext?.state?.prices?.novelPricePerChapter || ${state.prices.novelPricePerChapter};
+  const transferFeePercentage = adminContext?.state?.prices?.transferFeePercentage || ${state.prices.transferFeePercentage};
   
-  // Keep current credentials: admin / admin123
-  // AdminPanel implementation with real-time sync
-}`);
+  // Base novels list with current admin novels synchronized
+  const defaultNovelas: Novela[] = [
+    { id: 1, titulo: "Corazón Salvaje", genero: "Drama/Romance", capitulos: 185, año: 2009 },
+    { id: 2, titulo: "La Usurpadora", genero: "Drama/Melodrama", capitulos: 98, año: 1998 },
+    { id: 3, titulo: "María la del Barrio", genero: "Drama/Romance", capitulos: 73, año: 1995 },
+    { id: 4, titulo: "Marimar", genero: "Drama/Romance", capitulos: 63, año: 1994 },
+    { id: 5, titulo: "Rosalinda", genero: "Drama/Romance", capitulos: 80, año: 1999 },
+    { id: 6, titulo: "La Madrastra", genero: "Drama/Suspenso", capitulos: 135, año: 2005 },
+    { id: 7, titulo: "Rubí", genero: "Drama/Melodrama", capitulos: 115, año: 2004 },
+    { id: 8, titulo: "Pasión de Gavilanes", genero: "Drama/Romance", capitulos: 188, año: 2003 },
+    { id: 9, titulo: "Yo Soy Betty, la Fea", genero: "Comedia/Romance", capitulos: 335, año: 1999 },
+    { id: 10, titulo: "El Cuerpo del Deseo", genero: "Drama/Fantasía", capitulos: 178, año: 2005 },
+    { id: 11, titulo: "La Reina del Sur", genero: "Drama/Acción", capitulos: 63, año: 2011 },
+    { id: 12, titulo: "Sin Senos Sí Hay Paraíso", genero: "Drama/Acción", capitulos: 91, año: 2016 },
+    { id: 13, titulo: "El Señor de los Cielos", genero: "Drama/Acción", capitulos: 81, año: 2013 },
+    { id: 14, titulo: "La Casa de las Flores", genero: "Comedia/Drama", capitulos: 33, año: 2018 },
+    { id: 15, titulo: "Rebelde", genero: "Drama/Musical", capitulos: 440, año: 2004 },
+    { id: 16, titulo: "Amigas y Rivales", genero: "Drama/Romance", capitulos: 185, año: 2001 },
+    { id: 17, titulo: "Clase 406", genero: "Drama/Juvenil", capitulos: 344, año: 2002 },
+    { id: 18, titulo: "Destilando Amor", genero: "Drama/Romance", capitulos: 171, año: 2007 },
+    { id: 19, titulo: "Fuego en la Sangre", genero: "Drama/Romance", capitulos: 233, año: 2008 },
+    { id: 20, titulo: "Teresa", genero: "Drama/Melodrama", capitulos: 152, año: 2010 },
+    { id: 21, titulo: "Triunfo del Amor", genero: "Drama/Romance", capitulos: 176, año: 2010 },
+    { id: 22, titulo: "Una Familia con Suerte", genero: "Comedia/Drama", capitulos: 357, año: 2011 },
+    { id: 23, titulo: "Amores Verdaderos", genero: "Drama/Romance", capitulos: 181, año: 2012 },
+    { id: 24, titulo: "De Que Te Quiero, Te Quiero", genero: "Comedia/Romance", capitulos: 181, año: 2013 },
+    { id: 25, titulo: "Lo Que la Vida Me Robó", genero: "Drama/Romance", capitulos: 221, año: 2013 },
+    { id: 26, titulo: "La Gata", genero: "Drama/Romance", capitulos: 135, año: 2014 },
+    { id: 27, titulo: "Hasta el Fin del Mundo", genero: "Drama/Romance", capitulos: 177, año: 2014 },
+    { id: 28, titulo: "Yo No Creo en los Hombres", genero: "Drama/Romance", capitulos: 142, año: 2014 },
+    { id: 29, titulo: "La Malquerida", genero: "Drama/Romance", capitulos: 121, año: 2014 },
+    { id: 30, titulo: "Antes Muerta que Lichita", genero: "Comedia/Romance", capitulos: 183, año: 2015 },
+    { id: 31, titulo: "A Que No Me Dejas", genero: "Drama/Romance", capitulos: 153, año: 2015 },
+    { id: 32, titulo: "Simplemente María", genero: "Drama/Romance", capitulos: 155, año: 2015 },
+    { id: 33, titulo: "Tres Veces Ana", genero: "Drama/Romance", capitulos: 123, año: 2016 },
+    { id: 34, titulo: "La Candidata", genero: "Drama/Político", capitulos: 60, año: 2016 },
+    { id: 35, titulo: "Vino el Amor", genero: "Drama/Romance", capitulos: 143, año: 2016 },
+    { id: 36, titulo: "La Doble Vida de Estela Carrillo", genero: "Drama/Musical", capitulos: 95, año: 2017 },
+    { id: 37, titulo: "Mi Marido Tiene Familia", genero: "Comedia/Drama", capitulos: 175, año: 2017 },
+    { id: 38, titulo: "La Piloto", genero: "Drama/Acción", capitulos: 80, año: 2017 },
+    { id: 39, titulo: "Caer en Tentación", genero: "Drama/Suspenso", capitulos: 92, año: 2017 },
+    { id: 40, titulo: "Por Amar Sin Ley", genero: "Drama/Romance", capitulos: 123, año: 2018 },
+    { id: 41, titulo: "Amar a Muerte", genero: "Drama/Fantasía", capitulos: 190, año: 2018 },
+    { id: 42, titulo: "Ringo", genero: "Drama/Musical", capitulos: 90, año: 2019 },
+    { id: 43, titulo: "La Usurpadora (2019)", genero: "Drama/Melodrama", capitulos: 25, año: 2019 },
+    { id: 44, titulo: "100 Días para Enamorarnos", genero: "Comedia/Romance", capitulos: 104, año: 2020 },
+    { id: 45, titulo: "Te Doy la Vida", genero: "Drama/Romance", capitulos: 91, año: 2020 },
+    { id: 46, titulo: "Como Tú No Hay 2", genero: "Comedia/Romance", capitulos: 120, año: 2020 },
+    { id: 47, titulo: "La Desalmada", genero: "Drama/Romance", capitulos: 96, año: 2021 },
+    { id: 48, titulo: "Si Nos Dejan", genero: "Drama/Romance", capitulos: 93, año: 2021 },
+    { id: 49, titulo: "Vencer el Pasado", genero: "Drama/Familia", capitulos: 91, año: 2021 },
+    { id: 50, titulo: "La Herencia", genero: "Drama/Romance", capitulos: 74, año: 2022 }
+${state.novels.map(novel => `    ,{ id: ${novel.id}, titulo: "${novel.titulo}", genero: "${novel.genero}", capitulos: ${novel.capitulos}, año: ${novel.año}${novel.descripcion ? `, descripcion: "${novel.descripcion}"` : ''} }`).join('\n')}
+  ];
 
-      pagesFolder!.file('Home.tsx', `import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { ChevronRight, TrendingUp, Star, Tv, Filter, Calendar, Clock, Flame, BookOpen } from 'lucide-react';
-import { tmdbService } from '../services/tmdb';
-import { MovieCard } from '../components/MovieCard';
-import { HeroCarousel } from '../components/HeroCarousel';
-import { LoadingSpinner } from '../components/LoadingSpinner';
-import { ErrorMessage } from '../components/ErrorMessage';
-import { NovelasModal } from '../components/NovelasModal';
-import type { Movie, TVShow } from '../types/movie';
+${getNovelasModalImplementation()}
+`;
 
-export function Home() {
-  // Home implementation with NovelasModal integration
-}`);
+      // Incluir archivos principales con configuraciones actualizadas
+      contextFolder!.file('AdminContext.tsx', adminContextContent);
+      componentsFolder!.file('CheckoutModal.tsx', checkoutModalContent);
+      componentsFolder!.file('NovelasModal.tsx', novelasModalContent);
 
-      pagesFolder!.file('Cart.tsx', `import React from 'react';
-import { Link } from 'react-router-dom';
-import { ShoppingCart, Trash2, Star, Calendar, MessageCircle, ArrowLeft, Edit3, Tv, DollarSign, CreditCard, Calculator } from 'lucide-react';
-import { useCart } from '../context/CartContext';
-import { PriceCard } from '../components/PriceCard';
-import { CheckoutModal, OrderData, CustomerInfo } from '../components/CheckoutModal';
-import { sendOrderToWhatsApp } from '../utils/whatsapp';
-import { IMAGE_BASE_URL, POSTER_SIZE } from '../config/api';
+      // Incluir archivos de configuración actualizados
+      const packageJsonContent = generateUpdatedPackageJson();
+      const appTsxContent = generateUpdatedAppTsx();
+      const cartContextContent = generateUpdatedCartContext();
+      const priceCardContent = generateUpdatedPriceCard();
 
-export function Cart() {
-  // Cart implementation with real-time pricing
-}`);
+      zip.file('package.json', packageJsonContent);
+      srcFolder!.file('App.tsx', appTsxContent);
+      contextFolder!.file('CartContext.tsx', cartContextContent);
+      componentsFolder!.file('PriceCard.tsx', priceCardContent);
 
-      pagesFolder!.file('Movies.tsx', `import React, { useState, useEffect } from 'react';
-import { Film, Filter } from 'lucide-react';
-import { tmdbService } from '../services/tmdb';
-import { MovieCard } from '../components/MovieCard';
-import { LoadingSpinner } from '../components/LoadingSpinner';
-import { ErrorMessage } from '../components/ErrorMessage';
-import type { Movie } from '../types/movie';
+      // Incluir archivos de configuración del sistema
+      zip.file('vite.config.ts', getViteConfig());
+      zip.file('tailwind.config.js', getTailwindConfig());
+      zip.file('tsconfig.json', getTsConfig());
+      zip.file('index.html', getIndexHtml());
+      zip.file('vercel.json', getVercelConfig());
+      publicFolder!.file('_redirects', getNetlifyRedirects());
 
-export function Movies() {
-  // Movies implementation
-}`);
+      // Incluir archivos de servicios y utilidades
+      servicesFolder!.file('tmdb.ts', getTmdbService());
+      servicesFolder!.file('contentSync.ts', getContentSyncService());
+      utilsFolder!.file('whatsapp.ts', getWhatsappUtils());
+      hooksFolder!.file('useContentSync.ts', getContentSyncHook());
+      typesFolder!.file('movie.ts', getMovieTypes());
+      configFolder!.file('api.ts', getApiConfig());
 
-      pagesFolder!.file('TVShows.tsx', `import React, { useState, useEffect } from 'react';
-import { Tv, Filter } from 'lucide-react';
-import { tmdbService } from '../services/tmdb';
-import { MovieCard } from '../components/MovieCard';
-import { LoadingSpinner } from '../components/LoadingSpinner';
-import { ErrorMessage } from '../components/ErrorMessage';
-import type { TVShow } from '../types/movie';
+      // Incluir componentes adicionales
+      componentsFolder!.file('Header.tsx', getHeaderComponent());
+      componentsFolder!.file('MovieCard.tsx', getMovieCardComponent());
+      componentsFolder!.file('HeroCarousel.tsx', getHeroCarouselComponent());
+      componentsFolder!.file('LoadingSpinner.tsx', getLoadingSpinnerComponent());
+      componentsFolder!.file('ErrorMessage.tsx', getErrorMessageComponent());
+      componentsFolder!.file('Toast.tsx', getToastComponent());
+      componentsFolder!.file('VideoPlayer.tsx', getVideoPlayerComponent());
+      componentsFolder!.file('CastSection.tsx', getCastSectionComponent());
+      componentsFolder!.file('CartAnimation.tsx', getCartAnimationComponent());
 
-export function TVShows() {
-  // TVShows implementation
-}`);
+      // Incluir páginas
+      pagesFolder!.file('Home.tsx', getHomePageComponent());
+      pagesFolder!.file('Movies.tsx', getMoviesPageComponent());
+      pagesFolder!.file('TVShows.tsx', getTVShowsPageComponent());
+      pagesFolder!.file('Anime.tsx', getAnimePageComponent());
+      pagesFolder!.file('Search.tsx', getSearchPageComponent());
+      pagesFolder!.file('MovieDetail.tsx', getMovieDetailPageComponent());
+      pagesFolder!.file('TVDetail.tsx', getTVDetailPageComponent());
+      pagesFolder!.file('Cart.tsx', getCartPageComponent());
+      pagesFolder!.file('AdminPanel.tsx', getAdminPanelComponent());
 
-      pagesFolder!.file('Anime.tsx', `import React, { useState, useEffect } from 'react';
-import { Filter } from 'lucide-react';
-import { tmdbService } from '../services/tmdb';
-import { MovieCard } from '../components/MovieCard';
-import { LoadingSpinner } from '../components/LoadingSpinner';
-import { ErrorMessage } from '../components/ErrorMessage';
-import type { TVShow } from '../types/movie';
+      // Incluir archivos de estilos
+      srcFolder!.file('index.css', getIndexCss());
+      srcFolder!.file('main.tsx', getMainTsx());
+      srcFolder!.file('vite-env.d.ts', getViteEnvDts());
 
-export function Anime() {
-  // Anime implementation
-}`);
+      // Incluir archivos de configuración adicionales
+      zip.file('eslint.config.js', getEslintConfig());
+      zip.file('postcss.config.js', getPostcssConfig());
+      zip.file('tsconfig.app.json', getTsConfigApp());
+      zip.file('tsconfig.node.json', getTsConfigNode());
 
-      pagesFolder!.file('Search.tsx', `import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { Search, Filter } from 'lucide-react';
-import { tmdbService } from '../services/tmdb';
-import { MovieCard } from '../components/MovieCard';
-import { LoadingSpinner } from '../components/LoadingSpinner';
-import { ErrorMessage } from '../components/ErrorMessage';
-import type { Movie, TVShow } from '../types/movie';
+      // Incluir README con información del sistema
+      const readmeContent = generateSystemReadme();
+      zip.file('README.md', readmeContent);
 
-export function SearchPage() {
-  // Search implementation
-}`);
-
-      pagesFolder!.file('MovieDetail.tsx', `import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Star, Calendar, Clock, Plus, X, Play } from 'lucide-react';
-import { tmdbService } from '../services/tmdb';
-import { VideoPlayer } from '../components/VideoPlayer';
-import { PriceCard } from '../components/PriceCard';
-import { CastSection } from '../components/CastSection';
-import { LoadingSpinner } from '../components/LoadingSpinner';
-import { ErrorMessage } from '../components/ErrorMessage';
-import { useCart } from '../context/CartContext';
-import { IMAGE_BASE_URL, BACKDROP_SIZE } from '../config/api';
-import type { MovieDetails, Video, CartItem, CastMember } from '../types/movie';
-
-export function MovieDetail() {
-  // MovieDetail implementation with real-time pricing
-}`);
-
-      pagesFolder!.file('TVDetail.tsx', `import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Star, Calendar, Tv, Plus, X, Play, ChevronDown } from 'lucide-react';
-import { tmdbService } from '../services/tmdb';
-import { VideoPlayer } from '../components/VideoPlayer';
-import { PriceCard } from '../components/PriceCard';
-import { CastSection } from '../components/CastSection';
-import { LoadingSpinner } from '../components/LoadingSpinner';
-import { ErrorMessage } from '../components/ErrorMessage';
-import { useCart } from '../context/CartContext';
-import { IMAGE_BASE_URL, BACKDROP_SIZE } from '../config/api';
-import type { TVShowDetails, Video, CartItem, Season, CastMember } from '../types/movie';
-
-export function TVDetail() {
-  // TVDetail implementation with real-time pricing
-}`);
-
-      // Services
-      servicesFolder!.file('tmdb.ts', `import { BASE_URL, API_OPTIONS } from '../config/api';
-import type { Movie, TVShow, MovieDetails, TVShowDetails, Video, APIResponse, Genre, Cast, CastMember } from '../types/movie';
-
-class TMDBService {
-  // TMDB service implementation
-}
-
-export const tmdbService = new TMDBService();`);
-
-      servicesFolder!.file('contentSync.ts', `import { tmdbService } from './tmdb';
-import type { Movie, TVShow } from '../types/movie';
-
-class ContentSyncService {
-  // Content sync implementation
-}
-
-export const contentSyncService = new ContentSyncService();`);
-
-      // Utils
-      utilsFolder!.file('whatsapp.ts', `import { OrderData, CustomerInfo } from '../components/CheckoutModal';
-
-export function sendOrderToWhatsApp(orderData: OrderData): void {
-  // WhatsApp integration with real-time pricing
-}`);
-
-      // Types
-      typesFolder!.file('movie.ts', `export interface Movie {
-  id: number;
-  title: string;
-  original_title: string;
-  overview: string;
-  poster_path: string | null;
-  backdrop_path: string | null;
-  release_date: string;
-  vote_average: number;
-  vote_count: number;
-  genre_ids: number[];
-  adult: boolean;
-  original_language: string;
-  popularity: number;
-  video: boolean;
-}
-
-// All other type definitions
-`);
-
-      // Hooks
-      hooksFolder!.file('useContentSync.ts', `import { useState, useEffect } from 'react';
-import { contentSyncService } from '../services/contentSync';
-import type { Movie, TVShow } from '../types/movie';
-
-export function useContentSync() {
-  // Content sync hook implementation
-}`);
-
-      // Config
-      configFolder!.file('api.ts', `const API_KEY = '36c08297b5565b5604ed8646cb0c1393';
-const ACCESS_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIzNmMwODI5N2I1NTY1YjU2MDRlZDg2NDZjYjBjMTM5MyIsIm5iZiI6MTcxNzM3MjM0Ny44NDcwMDAxLCJzdWIiOiI2NjVkMDViYmZkOTMxM2QwZDNhMGFjZDciLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.X8jcKcjIT1svPP5EeO0CtF3Ct11pZwrXaJ0DLAz5pDQ';
-
-export const BASE_URL = 'https://api.themoviedb.org/3';
-export const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p';
-export const POSTER_SIZE = 'w500';
-export const BACKDROP_SIZE = 'w1280';
-
-export const API_OPTIONS = {
-  method: 'GET',
-  headers: {
-    accept: 'application/json',
-    Authorization: \`Bearer \${ACCESS_TOKEN}\`
-  }
-};
-
-export { API_KEY };`);
-
-      // Root files
-      srcFolder!.file('App.tsx', `import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { CartProvider } from './context/CartContext';
-import { AdminProvider } from './context/AdminContext';
-import { Header } from './components/Header';
-import { Home } from './pages/Home';
-import { Movies } from './pages/Movies';
-import { TVShows } from './pages/TVShows';
-import { Anime } from './pages/Anime';
-import { SearchPage } from './pages/Search';
-import { MovieDetail } from './pages/MovieDetail';
-import { TVDetail } from './pages/TVDetail';
-import { Cart } from './pages/Cart';
-import { AdminPanel } from './pages/AdminPanel';
-
-function App() {
-  // App implementation with real-time sync
-}
-
-export default App;`);
-
-      srcFolder!.file('main.tsx', `import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
-import App from './App.tsx';
-import './index.css';
-
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>
-);`);
-
-      srcFolder!.file('index.css', `@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-/* Custom styles with real-time theme support */`);
-
-      srcFolder!.file('vite-env.d.ts', `/// <reference types="vite/client" />`);
-
-      // Public files
-      publicFolder!.file('_redirects', `# Netlify redirects for SPA routing
-/*    /index.html   200
-
-# Handle specific routes
-/movies    /index.html   200
-/tv        /index.html   200
-/anime     /index.html   200
-/cart      /index.html   200
-/search    /index.html   200
-/movie/*   /index.html   200
-/tv/*      /index.html   200`);
-
-      // Configuration files
-      zip.file('package.json', `{
-  "name": "tv-a-la-carta-system-sync",
-  "private": true,
-  "version": "1.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@types/node": "^24.2.1",
-    "jszip": "^3.10.1",
-    "lucide-react": "^0.344.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-router-dom": "^7.8.0"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.9.1",
-    "@types/react": "^18.3.5",
-    "@types/react-dom": "^18.3.0",
-    "@vitejs/plugin-react": "^4.3.1",
-    "autoprefixer": "^10.4.18",
-    "eslint": "^9.9.1",
-    "eslint-plugin-react-hooks": "^5.1.0-rc.0",
-    "eslint-plugin-react-refresh": "^0.4.11",
-    "globals": "^15.9.0",
-    "postcss": "^8.4.35",
-    "tailwindcss": "^3.4.1",
-    "typescript": "^5.5.3",
-    "typescript-eslint": "^8.3.0",
-    "vite": "^5.4.2"
-  }
-}`);
-
-      zip.file('vite.config.ts', `import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    historyApiFallback: true,
-  },
-  preview: {
-    historyApiFallback: true,
-  },
-  optimizeDeps: {
-    exclude: ['lucide-react'],
-  },
-});`);
-
-      zip.file('tailwind.config.js', `/** @type {import('tailwindcss').Config} */
-export default {
-  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
-  theme: {
-    extend: {},
-  },
-  plugins: [],
-};`);
-
-      zip.file('tsconfig.json', `{
-  "files": [],
-  "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" }
-  ]
-}`);
-
-      zip.file('tsconfig.app.json', `{
-  "compilerOptions": {
-    "target": "ES2020",
-    "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
-    "skipLibCheck": true,
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "isolatedModules": true,
-    "moduleDetection": "force",
-    "noEmit": true,
-    "jsx": "react-jsx",
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
-  },
-  "include": ["src"]
-}`);
-
-      zip.file('vercel.json', `{ "rewrites": [{ "source": "/(.*)", "destination": "/" }] }`);
-
-      zip.file('README.md', `# TV a la Carta - Sistema Completo con Sincronización en Tiempo Real
-
-Sistema completo exportado el ${new Date().toLocaleString('es-ES')}
-
-## Características
-- Sincronización en tiempo real de configuraciones
-- Panel de administración completo
-- Gestión de precios, zonas de entrega y novelas
-- Exportación automática de código fuente actualizado
-- Credenciales: admin / admin123
-
-## Archivos Sincronizados
-- AdminContext.tsx: Contexto principal con datos actuales
-- PriceCard.tsx: Componente de precios sincronizado
-- CheckoutModal.tsx: Modal de checkout con zonas actualizadas
-- NovelasModal.tsx: Modal de novelas con catálogo actual
-- CartContext.tsx: Contexto del carrito con precios actuales
-
-## Instalación
-1. npm install
-2. npm run dev
-
-## Estado Actual del Sistema
-- Precios: Películas $${state.prices.moviePrice} CUP, Series $${state.prices.seriesPrice} CUP/temporada
-- Recargo transferencia: ${state.prices.transferFeePercentage}%
-- Precio novelas: $${state.prices.novelPricePerChapter} CUP/capítulo
-- Zonas de entrega: ${state.deliveryZones.length} configuradas
-- Novelas: ${state.novels.length} en catálogo
-- Notificaciones: ${state.notifications.length} en historial
-`);
-
-      // Incluir todos los archivos del sistema con sincronización
-      // [El resto del código de exportación permanece igual...]
+      // Incluir archivo de configuración del sistema exportado
+      const systemConfigContent = generateSystemConfig();
+      zip.file('system-config.json', systemConfigContent);
       
       // Generar y descargar el ZIP
       const content = await zip.generateAsync({ type: 'blob' });
       const url = URL.createObjectURL(content);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `tv-a-la-carta-system-realtime-sync-${timestamp}.zip`;
+      link.download = `tv-a-la-carta-sistema-completo-${timestamp}.zip`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -1395,8 +947,8 @@ Sistema completo exportado el ${new Date().toLocaleString('es-ES')}
 
       addNotification({
         type: 'success',
-        title: 'Sistema exportado con sincronización en tiempo real',
-        message: `Se ha exportado el sistema completo con todos los archivos sincronizados y configuraciones actuales. Archivo: tv-a-la-carta-system-realtime-sync-${timestamp}.zip`,
+        title: 'Sistema exportado exitosamente',
+        message: `Sistema completo exportado con todas las configuraciones actuales sincronizadas. Incluye: AdminContext.tsx, CheckoutModal.tsx, NovelasModal.tsx y todos los archivos del proyecto. Archivo: tv-a-la-carta-sistema-completo-${timestamp}.zip`,
         section: 'Sistema',
         action: 'export'
       });
@@ -1405,7 +957,7 @@ Sistema completo exportado el ${new Date().toLocaleString('es-ES')}
       addNotification({
         type: 'error',
         title: 'Error al exportar',
-        message: 'No se pudo exportar el sistema con sincronización. Intente nuevamente.',
+        message: 'No se pudo exportar el sistema completo. Verifique el espacio disponible e intente nuevamente.',
         section: 'Sistema',
         action: 'export_error'
       });

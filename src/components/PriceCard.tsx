@@ -17,14 +17,6 @@ export function PriceCard({ type, selectedSeasons = [], episodeCount = 0, isAnim
   const seriesPrice = adminContext?.state?.prices?.seriesPrice || 300;
   const transferFeePercentage = adminContext?.state?.prices?.transferFeePercentage || 10;
   
-  // Real-time sync effect
-  React.useEffect(() => {
-    if (adminContext?.state) {
-      // Trigger re-render when admin state changes
-      console.log('PriceCard: Admin state updated, prices synced');
-    }
-  }, [adminContext?.state?.prices]);
-  
   const calculatePrice = () => {
     if (type === 'movie') {
       return moviePrice;
