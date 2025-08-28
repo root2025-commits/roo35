@@ -480,7 +480,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     addNotification({
       type: 'success',
       title: '📍 Nueva zona de entrega agregada',
-      message: `✅ Zona "${zone.name}" agregada exitosamente con costo $${zone.cost.toLocaleString()} CUP.
+      message: \`✅ Zona "${zone.name}\" agregada exitosamente con costo $${zone.cost.toLocaleString()} CUP.
       
       🔄 Archivos actualizados automáticamente:
       • CheckoutModal.tsx - Nueva zona disponible en selector
@@ -496,7 +496,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     addNotification({
       type: 'success',
       title: '📍 Zona de entrega actualizada',
-      message: `✅ Zona "${zone.name}" actualizada con nuevo costo $${zone.cost.toLocaleString()} CUP.
+      message: \`✅ Zona "${zone.name}\" actualizada con nuevo costo $${zone.cost.toLocaleString()} CUP.
       
       🔄 Archivos actualizados automáticamente:
       • CheckoutModal.tsx - Costo actualizado en tiempo real
@@ -513,7 +513,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     addNotification({
       type: 'warning',
       title: '🗑️ Zona de entrega eliminada',
-      message: `⚠️ Zona "${zone?.name || 'Desconocida'}" eliminada del sistema.
+      message: \`⚠️ Zona "${zone?.name || 'Desconocida'}\" eliminada del sistema.
       
       🔄 Archivos actualizados automáticamente:
       • CheckoutModal.tsx - Zona removida del selector
@@ -530,7 +530,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     addNotification({
       type: 'success',
       title: '📚 Nueva novela agregada al catálogo',
-      message: `✅ Novela "${novel.titulo}" (${novel.año}) agregada exitosamente.
+      message: \`✅ Novela "${novel.titulo}" (${novel.año}) agregada exitosamente.
       
       📊 Detalles:
       • Capítulos: ${novel.capitulos}
@@ -551,7 +551,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     addNotification({
       type: 'success',
       title: '📚 Novela actualizada exitosamente',
-      message: `✅ Novela "${novel.titulo}" actualizada correctamente.
+      message: \`✅ Novela "${novel.titulo}\" actualizada correctamente.
       
       📊 Datos actualizados:
       • Capítulos: ${novel.capitulos}
@@ -573,7 +573,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     addNotification({
       type: 'warning',
       title: '🗑️ Novela eliminada del catálogo',
-      message: `⚠️ Novela "${novel?.titulo || 'Desconocida'}" (${novel?.capitulos || 0} capítulos) eliminada del sistema.
+      message: \`⚠️ Novela "${novel?.titulo || 'Desconocida'}" (${novel?.capitulos || 0} capítulos) eliminada del sistema.
       
       🔄 Archivos actualizados automáticamente:
       • NovelasModal.tsx - Novela removida del catálogo`,
