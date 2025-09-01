@@ -2500,3 +2500,4 @@ function generateMovieDetailPageFile(): string { return '// Complete movie detai
 function generateTVDetailPageFile(): string { return '// Complete TV detail page implementation'; }
 function generateCartPageFile(): string { return '// Complete cart page implementation'; }
 function generateAdminPanelFile(): string { return '// Complete admin panel implementation'; }
+}
