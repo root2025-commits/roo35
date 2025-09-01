@@ -8,7 +8,8 @@ import {
   getTailwindConfig,
   getIndexHtml,
   getNetlifyRedirects,
-  getVercelConfig
+  getVercelConfig,
+  generateSourceFiles
 } from '../utils/systemExport';
 
 // Types
@@ -572,32 +573,8 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       const publicFolder = zip.folder('public');
       publicFolder?.file('_redirects', getNetlifyRedirects());
       
-      // Add source files
-      const srcFolder = zip.folder('src');
-      
-      // Add all component files
-      const componentsFolder = srcFolder?.folder('components');
-      const pagesFolder = srcFolder?.folder('pages');
-      const contextFolder = srcFolder?.folder('context');
-      const servicesFolder = srcFolder?.folder('services');
-      const utilsFolder = srcFolder?.folder('utils');
-      const hooksFolder = srcFolder?.folder('hooks');
-      const configFolder = srcFolder?.folder('config');
-      const typesFolder = srcFolder?.folder('types');
-
-      // Read and add all current files
-      const fileContents = {
-        'src/App.tsx': document.querySelector('[data-file="src/App.tsx"]')?.textContent || '',
-        'src/main.tsx': document.querySelector('[data-file="src/main.tsx"]')?.textContent || '',
-        'src/index.css': document.querySelector('[data-file="src/index.css"]')?.textContent || '',
-        'src/vite-env.d.ts': '/// <reference types="vite/client" />',
-      };
-
-      // Add core files
-      Object.entries(fileContents).forEach(([path, content]) => {
-        const relativePath = path.replace('src/', '');
-        srcFolder?.file(relativePath, content);
-      });
+      // Generate and add all source files with current state
+      await generateSourceFiles(zip, state);
 
       // Generate and download
       const blob = await zip.generateAsync({ type: 'blob' });

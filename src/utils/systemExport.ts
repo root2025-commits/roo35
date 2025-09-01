@@ -1,88 +1,5 @@
 // Utility functions for system export with real-time synchronization
 
-export function getAdminContextImplementation(): string {
-  return `
-// Reducer
-function adminReducer(state: AdminState, action: AdminAction): AdminState {
-  switch (action.type) {
-    case 'LOGIN':
-      if (action.payload.username === 'admin' && action.payload.password === 'admin123') {
-        return { ...state, isAuthenticated: true };
-      }
-      return state;
-
-    case 'LOGOUT':
-      return { ...state, isAuthenticated: false };
-
-    case 'UPDATE_PRICES':
-      return {
-        ...state,
-        prices: action.payload,
-        syncStatus: { ...state.syncStatus, pendingChanges: state.syncStatus.pendingChanges + 1 }
-      };
-
-    case 'ADD_DELIVERY_ZONE':
-      const newZone: DeliveryZone = {
-        ...action.payload,
-        id: Date.now(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      return {
-        ...state,
-        deliveryZones: [...state.deliveryZones, newZone],
-        syncStatus: { ...state.syncStatus, pendingChanges: state.syncStatus.pendingChanges + 1 }
-      };
-
-    default:
-      return state;
-  }
-}
-`;
-}
-
-export function getCheckoutModalImplementation(): string {
-  return `
-export function CheckoutModal({ isOpen, onClose, onCheckout, items, total }: CheckoutModalProps) {
-  const adminContext = React.useContext(AdminContext);
-  const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
-    fullName: '',
-    phone: '',
-    address: '',
-  });
-  
-  const [deliveryZone, setDeliveryZone] = useState('Por favor seleccionar su Barrio/Zona');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [orderGenerated, setOrderGenerated] = useState(false);
-  const [generatedOrder, setGeneratedOrder] = useState('');
-  const [copied, setCopied] = useState(false);
-
-  // Get delivery zones from admin context with real-time updates
-  const adminZones = adminContext?.state?.deliveryZones || [];
-  const adminZonesMap = adminZones.reduce((acc, zone) => {
-    acc[zone.name] = zone.cost;
-    return acc;
-  }, {} as { [key: string]: number });
-  
-  // Combine admin zones with base zones - real-time sync
-  const allZones = { ...BASE_DELIVERY_ZONES, ...adminZonesMap };
-  const deliveryCost = allZones[deliveryZone as keyof typeof allZones] || 0;
-  const finalTotal = total + deliveryCost;
-
-  // Get current transfer fee percentage with real-time updates
-  const transferFeePercentage = adminContext?.state?.prices?.transferFeePercentage || 10;
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
-      {/* Implementación completa del modal */}
-    </div>
-  );
-}
-`;
-}
-
 export function generateSystemReadme(state: any): string {
   return `# TV a la Carta - Sistema Completo
 
@@ -295,3 +212,6 @@ export function getNetlifyRedirects(): string {
 export function getVercelConfig(): string {
   return JSON.stringify({ "rewrites": [{ "source": "/(.*)", "destination": "/" }] }, null, 2);
 }
+
+// Re-export from exportHelpers for compatibility
+export { generateSourceFiles } from './exportHelpers';
