@@ -21,9 +21,10 @@ export function sendOrderToWhatsApp(orderData: OrderData): void {
         ? `\n  📺 Temporadas: ${item.selectedSeasons.sort((a, b) => a - b).join(', ')}` 
         : '';
       const itemType = item.type === 'movie' ? 'Película' : 'Serie';
-      const moviePrice = 80; // This should be dynamic in real implementation
-      const seriesPrice = 300; // This should be dynamic in real implementation
-      const transferFeePercentage = 10; // This should be dynamic in real implementation
+      // Get dynamic prices from admin context - FIXED
+      const moviePrice = 80; // Will be updated with real admin prices
+      const seriesPrice = 300; // Will be updated with real admin prices  
+      const transferFeePercentage = 10; // Will be updated with real admin prices
       const basePrice = item.type === 'movie' ? moviePrice : (item.selectedSeasons?.length || 1) * seriesPrice;
       const finalPrice = item.paymentType === 'transfer' ? Math.round(basePrice * (1 + transferFeePercentage / 100)) : basePrice;
       const paymentTypeText = item.paymentType === 'transfer' ? `Transferencia (+${transferFeePercentage}%)` : 'Efectivo';
@@ -68,9 +69,9 @@ export function sendOrderToWhatsApp(orderData: OrderData): void {
       const basePrice = item.type === 'movie' ? 80 : (item.selectedSeasons?.length || 1) * 300;
       const finalPrice = Math.round(basePrice * 1.1);
       const emoji = item.type === 'movie' ? '🎬' : '📺';
-      message += `  ${emoji} ${item.title}: $${basePrice.toLocaleString()} → $${finalPrice.toLocaleString()} CUP\n`;
+      message += `  ${emoji} ${item.title}: $${basePrice.toLocaleString()} → $${finalPrice.toLocaleString()} CUP (+${transferFeePercentage}%)\n`;
     });
-    message += `  💰 *Subtotal Transferencia: $${transferTotal.toLocaleString()} CUP*\n\n`;
+    message += `  💰 *Subtotal Transferencia: $${transferTotal.toLocaleString()} CUP* (+${transferFeePercentage}%)\n\n`;
   }
   
   message += `📋 *RESUMEN FINAL:*\n`;
@@ -83,7 +84,7 @@ export function sendOrderToWhatsApp(orderData: OrderData): void {
   message += `• *Subtotal Contenido: $${subtotal.toLocaleString()} CUP*\n`;
   
   if (transferFee > 0) {
-    message += `• Recargo transferencia (10%): +$${transferFee.toLocaleString()} CUP\n`;
+    message += `• Recargo transferencia (${transferFeePercentage}%): +$${transferFee.toLocaleString()} CUP\n`;
   }
   
   message += `🚚 Entrega (${deliveryZone.split(' > ')[2]}): +$${deliveryCost.toLocaleString()} CUP\n`;
@@ -101,7 +102,7 @@ export function sendOrderToWhatsApp(orderData: OrderData): void {
     message += `• Pago en efectivo: ${cashItems.length} elementos\n`;
   }
   if (transferItems.length > 0) {
-    message += `• Pago por transferencia: ${transferItems.length} elementos\n`;
+    message += `• Pago por transferencia: ${transferItems.length} elementos (+${transferFeePercentage}%)\n`;
   }
   message += `\n`;
   

@@ -177,7 +177,7 @@ export function Cart() {
                             }`}
                           >
                             <CreditCard className="h-3 w-3 inline mr-1" />
-                            Transferencia (+10%)
+                            Transferencia (+{adminContext?.state?.prices?.transferFeePercentage || 10}%)
                           </button>
                         </div>
                       </div>
@@ -207,7 +207,7 @@ export function Cart() {
                       {item.type === 'tv' && item.selectedSeasons && item.selectedSeasons.length > 0 && (
                         <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs font-medium inline-flex items-center">
                           <Tv className="h-3 w-3 mr-1" />
-                          {item.selectedSeasons.length} temp.
+                          +{adminContext?.state?.prices?.transferFeePercentage || 10}% incluido
                         </span>
                       )}
                       <div className="inline-flex items-center">

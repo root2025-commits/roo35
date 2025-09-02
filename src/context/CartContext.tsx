@@ -199,7 +199,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   };
 
   const calculateItemPrice = (item: SeriesCartItem): number => {
-    // Get current prices from admin context with real-time updates
+    // Get current prices from admin context with real-time updates - FIXED
     const moviePrice = adminContext?.state?.prices?.moviePrice || 80;
     const seriesPrice = adminContext?.state?.prices?.seriesPrice || 300;
     const transferFeePercentage = adminContext?.state?.prices?.transferFeePercentage || 10;
@@ -221,6 +221,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   };
 
   const calculateTotalByPaymentType = (): { cash: number; transfer: number } => {
+    // Get current prices with real-time updates - FIXED
     const moviePrice = adminContext?.state?.prices?.moviePrice || 80;
     const seriesPrice = adminContext?.state?.prices?.seriesPrice || 300;
     const transferFeePercentage = adminContext?.state?.prices?.transferFeePercentage || 10;

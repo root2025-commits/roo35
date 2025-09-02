@@ -30,8 +30,12 @@ export function NovelasModal({ isOpen, onClose }: NovelasModalProps) {
 
   // Get novels and prices from admin context with real-time updates
   const adminNovels = adminContext?.state?.novels || [];
-  const novelPricePerChapter = adminContext?.state?.prices?.novelPricePerChapter || 5;
-  const transferFeePercentage = adminContext?.state?.prices?.transferFeePercentage || 10;
+  
+  // Get prices with real-time updates - FIXED
+  const { novelPricePerChapter, transferFeePercentage } = React.useMemo(() => ({
+    novelPricePerChapter: adminContext?.state?.prices?.novelPricePerChapter || 5,
+    transferFeePercentage: adminContext?.state?.prices?.transferFeePercentage || 10,
+  }), [adminContext?.state?.prices]);
   
   // Base novels list
   const defaultNovelas: Novela[] = [

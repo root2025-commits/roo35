@@ -82,8 +82,10 @@ export function CheckoutModal({ isOpen, onClose, onCheckout, items, total }: Che
   const deliveryCost = allZones[deliveryZone as keyof typeof allZones] || 0;
   const finalTotal = total + deliveryCost;
 
-  // Get current transfer fee percentage with real-time updates
-  const transferFeePercentage = adminContext?.state?.prices?.transferFeePercentage || 10;
+  // Get current transfer fee percentage with real-time updates - FIXED
+  const transferFeePercentage = React.useMemo(() => {
+    return adminContext?.state?.prices?.transferFeePercentage || 10;
+  }, [adminContext?.state?.prices?.transferFeePercentage]);
 
   const isFormValid = customerInfo.fullName.trim() !== '' && 
                      customerInfo.phone.trim() !== '' && 
@@ -104,7 +106,7 @@ export function CheckoutModal({ isOpen, onClose, onCheckout, items, total }: Che
     return `TVC-${timestamp}-${random}`.toUpperCase();
   };
 
-  const calculateTotals = () => {
+  const calculateTotals = React.useCallback(() => {
     const cashItems = items.filter(item => item.paymentType === 'cash');
     const transferItems = items.filter(item => item.paymentType === 'transfer');
     
@@ -123,9 +125,9 @@ export function CheckoutModal({ isOpen, onClose, onCheckout, items, total }: Che
     }, 0);
     
     return { cashTotal, transferTotal };
-  };
+  }, [items, adminContext?.state?.prices, transferFeePercentage]);
 
-  const generateOrderText = () => {
+  const generateOrderText = React.useCallback(() => {
     const orderId = generateOrderId();
     const { cashTotal, transferTotal } = calculateTotals();
     const transferFee = transferTotal - items.filter(item => item.paymentType === 'transfer').reduce((sum, item) => {
@@ -187,7 +189,7 @@ export function CheckoutModal({ isOpen, onClose, onCheckout, items, total }: Che
     orderText += `🌟 *¡Gracias por elegir TV a la Carta!*`;
 
     return { orderText, orderId };
-  };
+  }, [customerInfo, deliveryZone, deliveryCost, items, total, transferFeePercentage, calculateTotals, adminContext?.state?.prices]);
 
   const handleGenerateOrder = () => {
     if (!isFormValid) {
