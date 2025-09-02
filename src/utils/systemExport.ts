@@ -1466,7 +1466,8 @@ export function sendOrderToWhatsApp(orderData: OrderData): void {
 }
 
 export function getAdminContextSource(state: any): string {
-  return `import React, { createContext, useContext, useReducer, useEffect } from 'react';
+  return \`import React, { createContext, useContext, useReducer, useEffect } from 'react';
+}
 import JSZip from 'jszip';
 import { 
   generateSystemReadme, 
@@ -2211,3 +2212,7 @@ export function useAdmin() {
 }
 
 export { AdminContext };
+    }
+    )
+  }
+}
