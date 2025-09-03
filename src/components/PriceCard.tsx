@@ -12,12 +12,10 @@ interface PriceCardProps {
 export function PriceCard({ type, selectedSeasons = [], episodeCount = 0, isAnime = false }: PriceCardProps) {
   const adminContext = React.useContext(AdminContext);
   
-  // Get prices from admin context with real-time updates - FIXED
-  const { moviePrice, seriesPrice, transferFeePercentage } = React.useMemo(() => ({
-    moviePrice: adminContext?.state?.prices?.moviePrice || 80,
-    seriesPrice: adminContext?.state?.prices?.seriesPrice || 300,
-    transferFeePercentage: adminContext?.state?.prices?.transferFeePercentage || 10,
-  }), [adminContext?.state?.prices]);
+  // Get prices from admin context with real-time updates
+  const moviePrice = adminContext?.state?.prices?.moviePrice || 80;
+  const seriesPrice = adminContext?.state?.prices?.seriesPrice || 300;
+  const transferFeePercentage = adminContext?.state?.prices?.transferFeePercentage || 10;
   
   const calculatePrice = () => {
     if (type === 'movie') {
@@ -93,7 +91,7 @@ export function PriceCard({ type, selectedSeasons = [], episodeCount = 0, isAnim
             </span>
           </div>
           <div className="text-xs text-orange-600">
-            +${transferFeePercentage}% recargo bancario
+            +{transferFeePercentage}% recargo bancario
           </div>
         </div>
         
