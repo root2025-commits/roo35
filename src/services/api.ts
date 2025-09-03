@@ -32,7 +32,10 @@ export class APIService {
       
       return data;
     } catch (error) {
-      console.error(`API Error for ${endpoint}:`, error);
+      // Don't log 404 errors as they're expected when content doesn't exist
+      if (error instanceof Error && !error.message.includes('status: 404')) {
+        console.error(`API Error for ${endpoint}:`, error);
+      }
       
       // Return cached data if available, even if expired
       if (this.cache.has(cacheKey)) {
