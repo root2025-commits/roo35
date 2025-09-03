@@ -9,37 +9,50 @@ class TMDBService {
 
   // Enhanced video fetching with better filtering
   private async getVideosWithFallback(endpoint: string): Promise<{ results: Video[] }> {
+    let spanishVideos: { results: Video[] } = { results: [] };
+    let englishVideos: { results: Video[] } = { results: [] };
+
+    // Try Spanish first with separate error handling
     try {
-      // Try Spanish first
       const spanishVideos = await this.fetchData<{ results: Video[] }>(`${endpoint}?language=es-ES`);
-      
-      // If no Spanish videos, try English
-      if (!spanishVideos.results || spanishVideos.results.length === 0) {
-        const englishVideos = await this.fetchData<{ results: Video[] }>(`${endpoint}?language=en-US`);
-        return englishVideos;
-      }
-      
-      // If Spanish videos exist but no trailers, combine with English
-      const spanishTrailers = spanishVideos.results.filter(
+      spanishVideos = spanishVideos;
+    } catch (error) {
+      console.warn('Spanish videos not available:', error);
+    }
+
+    // Try English with separate error handling
+    try {
+      englishVideos = await this.fetchData<{ results: Video[] }>(`${endpoint}?language=en-US`);
+    } catch (error) {
+      console.warn('English videos not available:', error);
+    }
+
+    // If no videos from either language, return empty
+    if (spanishVideos.results.length === 0 && englishVideos.results.length === 0) {
+      return { results: [] };
+    }
+
+    // If no Spanish videos, return English
+    if (spanishVideos.results.length === 0) {
+      return englishVideos;
+    }
+
+    // If Spanish videos exist but no trailers, combine with English
+    const spanishTrailers = spanishVideos.results.filter(
+      video => video.site === 'YouTube' && (video.type === 'Trailer' || video.type === 'Teaser')
+    );
+    
+    if (spanishTrailers.length === 0) {
+      const englishTrailers = englishVideos.results.filter(
         video => video.site === 'YouTube' && (video.type === 'Trailer' || video.type === 'Teaser')
       );
       
-      if (spanishTrailers.length === 0) {
-        const englishVideos = await this.fetchData<{ results: Video[] }>(`${endpoint}?language=en-US`);
-        const englishTrailers = englishVideos.results.filter(
-          video => video.site === 'YouTube' && (video.type === 'Trailer' || video.type === 'Teaser')
-        );
-        
-        return {
-          results: [...spanishVideos.results, ...englishTrailers]
-        };
-      }
-      
-      return spanishVideos;
-    } catch (error) {
-      console.error('Error fetching videos:', error);
-      return { results: [] };
+      return {
+        results: [...spanishVideos.results, ...englishTrailers]
+      };
     }
+    
+    return spanishVideos;
   }
 
   // Movies
