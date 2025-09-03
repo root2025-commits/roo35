@@ -14,8 +14,7 @@ class TMDBService {
 
     // Try Spanish first with separate error handling
     try {
-      const spanishVideos = await this.fetchData<{ results: Video[] }>(`${endpoint}?language=es-ES`);
-      spanishVideos = spanishVideos;
+      spanishVideos = await this.fetchData<{ results: Video[] }>(`${endpoint}?language=es-ES`);
     } catch (error) {
       console.warn('Spanish videos not available:', error);
     }
