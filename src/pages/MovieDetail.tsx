@@ -1,448 +1,559 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Star, Calendar, Clock, Plus, X, Play, Film, Globe, DollarSign, TrendingUp, Users, Building, Sparkles, Heart, Zap, BookText, Info, Clapperboard } from 'lucide-react';
-import { tmdbService } from '../services/tmdb';
-import { VideoPlayer } from '../components/VideoPlayer';
-import { PriceCard } from '../components/PriceCard';
-import { CastSection } from '../components/CastSection';
-import { LoadingSpinner } from '../components/LoadingSpinner';
-import { ErrorMessage } from '../components/ErrorMessage';
-import { useCart } from '../context/CartContext';
-import { IMAGE_BASE_URL, BACKDROP_SIZE } from '../config/api';
-import type { MovieDetails, Video, CartItem, CastMember } from '../types/movie';
+import React, { useState } from 'react';
+import { X, User, MapPin, Phone, Copy, Check, MessageCircle, Calculator, DollarSign, CreditCard } from 'lucide-react';
 
-export function MovieDetail() {
-  const { id } = useParams<{ id: string }>();
-  const [movie, setMovie] = useState<MovieDetails | null>(null);
-  const [videos, setVideos] = useState<Video[]>([]);
-  const [cast, setCast] = useState<CastMember[]>([]);
-  const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
-  const [showVideo, setShowVideo] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isCartHovered, setIsCartHovered] = useState(false);
-  const [showCartAnimation, setShowCartAnimation] = useState(false);
-  const { addItem, removeItem, isInCart } = useCart();
+// ZONAS DE ENTREGA EMBEBIDAS - Generadas automáticamente
+const EMBEDDED_DELIVERY_ZONES = [];
 
-  const movieId = parseInt(id || '0');
-  const inCart = isInCart(movieId);
+// PRECIOS EMBEBIDOS
+const EMBEDDED_PRICES = {
+  "moviePrice": 80,
+  "seriesPrice": 300,
+  "transferFeePercentage": 10,
+  "novelPricePerChapter": 5
+};
 
-  // Detectar si es anime
-  const isAnime = movie?.original_language === 'ja' || 
-                 (movie?.genres && movie.genres.some(g => g.name.toLowerCase().includes('animat')));
+export interface CustomerInfo {
+  fullName: string;
+  phone: string;
+  address: string;
+}
 
-  useEffect(() => {
-    const fetchMovieData = async () => {
-      try {
-        setLoading(true);
-        
-        // Fetch movie details and credits first
-        const [movieData, creditsData] = await Promise.all([
-          tmdbService.getMovieDetails(movieId),
-          tmdbService.getMovieCredits(movieId)
-        ]);
+export interface OrderData {
+  orderId: string;
+  customerInfo: CustomerInfo;
+  deliveryZone: string;
+  deliveryCost: number;
+  items: any[];
+  subtotal: number;
+  transferFee: number;
+  total: number;
+  cashTotal?: number;
+  transferTotal?: number;
+}
 
-        setMovie(movieData);
-        setCast(creditsData.cast || []);
-        
-        // Fetch videos separately with error handling
-        try {
-          const videoData = await tmdbService.getMovieVideos(movieId);
-          const trailers = videoData.results.filter(
-            video => video.site === 'YouTube' && (video.type === 'Trailer' || video.type === 'Teaser')
-          );
-          setVideos(trailers);
-          
-          if (trailers.length > 0) {
-            setSelectedVideo(trailers[0]);
-          }
-        } catch (videoError) {
-          console.warn(`No videos available for movie ${movieId}`);
-          setVideos([]);
-        }
-      } catch (err) {
-        setError('Error al cargar los detalles de la película.');
-        console.error('Error fetching movie details:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
+interface CheckoutModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onCheckout: (orderData: OrderData) => void;
+  items: any[];
+  total: number;
+}
 
-    if (movieId) {
-      fetchMovieData();
+// Base delivery zones - these will be combined with embedded zones
+const BASE_DELIVERY_ZONES = {
+  'Por favor seleccionar su Barrio/Zona': 0,
+  'Recogida en el Local > TV a la Carta > Oficina Central': 0,
+};
+
+export function CheckoutModal({ isOpen, onClose, onCheckout, items, total }: CheckoutModalProps) {
+  const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
+    fullName: '',
+    phone: '',
+    address: '',
+  });
+  
+  const [deliveryZone, setDeliveryZone] = useState('Por favor seleccionar su Barrio/Zona');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [orderGenerated, setOrderGenerated] = useState(false);
+  const [generatedOrder, setGeneratedOrder] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [showLocationInfo, setShowLocationInfo] = useState(false);
+  const [distanceInfo, setDistanceInfo] = useState<{
+    distance: string;
+    duration: string;
+    durationCar: string;
+    durationBike: string;
+    durationWalk: string;
+  } | null>(null);
+
+  // Get delivery zones from embedded configuration
+  const embeddedZonesMap = EMBEDDED_DELIVERY_ZONES.reduce((acc, zone) => {
+    acc[zone.name] = zone.cost;
+    return acc;
+  }, {} as { [key: string]: number });
+  
+  // Combine embedded zones with base zones
+  const allZones = { ...BASE_DELIVERY_ZONES, ...embeddedZonesMap };
+  const deliveryCost = allZones[deliveryZone as keyof typeof allZones] || 0;
+  const finalTotal = total + deliveryCost;
+
+  // Get current transfer fee percentage from embedded prices
+  const transferFeePercentage = EMBEDDED_PRICES.transferFeePercentage;
+
+  const isFormValid = customerInfo.fullName.trim() !== '' && 
+                     customerInfo.phone.trim() !== '' && 
+                     customerInfo.address.trim() !== '' &&
+                     deliveryZone !== 'Por favor seleccionar su Barrio/Zona';
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setCustomerInfo(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const generateOrderId = () => {
+    const timestamp = Date.now().toString(36);
+    const random = Math.random().toString(36).substr(2, 5);
+    return `TVC-${timestamp}-${random}`.toUpperCase();
+  };
+
+  const calculateTotals = () => {
+    const cashItems = items.filter(item => item.paymentType === 'cash');
+    const transferItems = items.filter(item => item.paymentType === 'transfer');
+    
+    // Get current prices from embedded configuration
+    const moviePrice = EMBEDDED_PRICES.moviePrice;
+    const seriesPrice = EMBEDDED_PRICES.seriesPrice;
+    
+    const cashTotal = cashItems.reduce((sum, item) => {
+      const basePrice = item.type === 'movie' ? moviePrice : (item.selectedSeasons?.length || 1) * seriesPrice;
+      return sum + basePrice;
+    }, 0);
+    
+    const transferTotal = transferItems.reduce((sum, item) => {
+      const basePrice = item.type === 'movie' ? moviePrice : (item.selectedSeasons?.length || 1) * seriesPrice;
+      return sum + Math.round(basePrice * (1 + transferFeePercentage / 100));
+    }, 0);
+    
+    return { cashTotal, transferTotal };
+  };
+
+  const generateOrderText = () => {
+    const orderId = generateOrderId();
+    const { cashTotal, transferTotal } = calculateTotals();
+    const transferFee = transferTotal - items.filter(item => item.paymentType === 'transfer').reduce((sum, item) => {
+      const moviePrice = EMBEDDED_PRICES.moviePrice;
+      const seriesPrice = EMBEDDED_PRICES.seriesPrice;
+      const basePrice = item.type === 'movie' ? moviePrice : (item.selectedSeasons?.length || 1) * seriesPrice;
+      return sum + basePrice;
+    }, 0);
+
+    // Format product list with embedded pricing
+    const itemsList = items
+      .map(item => {
+        const seasonInfo = item.selectedSeasons && item.selectedSeasons.length > 0 
+          ? `\n  📺 Temporadas: ${item.selectedSeasons.sort((a, b) => a - b).join(', ')}` 
+          : '';
+        const itemType = item.type === 'movie' ? 'Película' : 'Serie';
+        const moviePrice = EMBEDDED_PRICES.moviePrice;
+        const seriesPrice = EMBEDDED_PRICES.seriesPrice;
+        const basePrice = item.type === 'movie' ? moviePrice : (item.selectedSeasons?.length || 1) * seriesPrice;
+        const finalPrice = item.paymentType === 'transfer' ? Math.round(basePrice * (1 + transferFeePercentage / 100)) : basePrice;
+        const paymentTypeText = item.paymentType === 'transfer' ? `Transferencia (+${transferFeePercentage}%)` : 'Efectivo';
+        const emoji = item.type === 'movie' ? '🎬' : '📺';
+        return `${emoji} *${item.title}*${seasonInfo}\n  📋 Tipo: ${itemType}\n  💳 Pago: ${paymentTypeText}\n  💰 Precio: $${finalPrice.toLocaleString()} CUP`;
+      })
+      .join('\n\n');
+
+    let orderText = `🎬 *PEDIDO - TV A LA CARTA*\n\n`;
+    orderText += `📋 *ID de Orden:* ${orderId}\n\n`;
+    
+    orderText += `👤 *DATOS DEL CLIENTE:*\n`;
+    orderText += `• Nombre: ${customerInfo.fullName}\n`;
+    orderText += `• Teléfono: ${customerInfo.phone}\n`;
+    orderText += `• Dirección: ${customerInfo.address}\n\n`;
+    
+    orderText += `🎯 *PRODUCTOS SOLICITADOS:*\n${itemsList}\n\n`;
+    
+    orderText += `💰 *RESUMEN DE COSTOS:*\n`;
+    
+    if (cashTotal > 0) {
+      orderText += `💵 Efectivo: $${cashTotal.toLocaleString()} CUP\n`;
     }
-  }, [movieId]);
+    if (transferTotal > 0) {
+      orderText += `🏦 Transferencia: $${transferTotal.toLocaleString()} CUP\n`;
+    }
+    orderText += `• *Subtotal Contenido: $${total.toLocaleString()} CUP*\n`;
+    
+    if (transferFee > 0) {
+      orderText += `• Recargo transferencia (${transferFeePercentage}%): +$${transferFee.toLocaleString()} CUP\n`;
+    }
+    
+    orderText += `🚚 Entrega (${deliveryZone.split(' > ')[2]}): +$${deliveryCost.toLocaleString()} CUP\n`;
+    orderText += `\n🎯 *TOTAL FINAL: $${finalTotal.toLocaleString()} CUP*\n\n`;
+    
+    orderText += `📍 *ZONA DE ENTREGA:*\n`;
+    orderText += `${deliveryZone.replace(' > ', ' → ')}\n`;
+    orderText += `💰 Costo de entrega: $${deliveryCost.toLocaleString()} CUP\n\n`;
+    
+    orderText += `⏰ *Fecha:* ${new Date().toLocaleString('es-ES')}\n`;
+    orderText += `🌟 *¡Gracias por elegir TV a la Carta!*`;
 
-  const handleCartAction = () => {
-    if (!movie) return;
+    return { orderText, orderId };
+  };
 
-    setShowCartAnimation(true);
-    setTimeout(() => setShowCartAnimation(false), 2000);
+  const handleGenerateOrder = () => {
+    if (!isFormValid) {
+      alert('Por favor complete todos los campos requeridos antes de generar la orden.');
+      return;
+    }
+    
+    const { orderText } = generateOrderText();
+    setGeneratedOrder(orderText);
+    setOrderGenerated(true);
+  };
 
-    const cartItem: CartItem = {
-      id: movie.id,
-      title: movie.title,
-      poster_path: movie.poster_path,
-      type: 'movie',
-      release_date: movie.release_date,
-      vote_average: movie.vote_average,
-      original_language: movie.original_language,
-      genre_ids: movie.genres.map(g => g.id),
-    };
-
-    if (inCart) {
-      removeItem(movie.id);
-    } else {
-      addItem(cartItem);
+  const handleCopyOrder = async () => {
+    try {
+      await navigator.clipboard.writeText(generatedOrder);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Error copying to clipboard:', err);
     }
   };
 
-  const formatRuntime = (minutes: number): string => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours}h ${mins}m`;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (deliveryZone === 'Por favor seleccionar su Barrio/Zona') {
+      alert('Por favor selecciona un barrio específico para la entrega.');
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      const { orderId } = generateOrderText();
+      const { cashTotal, transferTotal } = calculateTotals();
+      const transferFee = transferTotal - items.filter(item => item.paymentType === 'transfer').reduce((sum, item) => {
+        const moviePrice = EMBEDDED_PRICES.moviePrice;
+        const seriesPrice = EMBEDDED_PRICES.seriesPrice;
+        const basePrice = item.type === 'movie' ? moviePrice : (item.selectedSeasons?.length || 1) * seriesPrice;
+        return sum + basePrice;
+      }, 0);
+
+      const orderData: OrderData = {
+        orderId,
+        customerInfo,
+        deliveryZone,
+        deliveryCost,
+        items,
+        subtotal: total,
+        transferFee,
+        total: finalTotal,
+        cashTotal,
+        transferTotal
+      };
+
+      await onCheckout(orderData);
+    } catch (error) {
+      console.error('Checkout failed:', error);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <LoadingSpinner />
-      </div>
-    );
-  }
-
-  if (error || !movie) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <ErrorMessage message={error || 'Película no encontrada'} />
-      </div>
-    );
-  }
-
-  const backdropUrl = movie.backdrop_path
-    ? `${IMAGE_BASE_URL}/${BACKDROP_SIZE}${movie.backdrop_path}`
-    : 'https://images.unsplash.com/photo-1489599843253-c76cc4bcb8cf?w=1280&h=720&fit=crop&crop=center';
+  if (!isOpen) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
-      <div className="relative h-96 md:h-[500px] overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${backdropUrl})` }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
-        
-        <div className="relative h-full flex items-end">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8 w-full">
-            <Link
-              to="/movies"
-              className="inline-flex items-center text-white/80 hover:text-white mb-4 transition-colors"
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
+      <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[95vh] overflow-hidden shadow-2xl">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 sm:p-6 text-white">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="bg-white/20 p-2 rounded-lg mr-3">
+                <MessageCircle className="h-6 w-6" />
+              </div>
+              <div>
+                <h2 className="text-xl sm:text-2xl font-bold">Finalizar Pedido</h2>
+                <p className="text-sm opacity-90">Complete sus datos para procesar el pedido</p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-white/20 rounded-full transition-colors"
             >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Volver a películas
-            </Link>
-            
-            <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
-              {movie.title}
-            </h1>
-            
-            <div className="flex flex-wrap items-center gap-4 text-white/90 mb-4">
-              <div className="flex items-center">
-                <Star className="h-5 w-5 fill-yellow-400 text-yellow-400 mr-1" />
-                <span className="font-medium">{movie.vote_average.toFixed(1)}</span>
-              </div>
-              <div className="flex items-center">
-                <Calendar className="h-5 w-5 mr-1" />
-                <span>{new Date(movie.release_date).getFullYear()}</span>
-              </div>
-              <div className="flex items-center">
-                <Clock className="h-5 w-5 mr-1" />
-                <span>{formatRuntime(movie.runtime)}</span>
-              </div>
-            </div>
-            
-            <div className="flex flex-wrap gap-2 mb-6">
-              {movie.genres.map((genre) => (
-                <span
-                  key={genre.id}
-                  className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm text-white"
-                >
-                  {genre.name}
-                </span>
-              ))}
-            </div>
+              <X className="h-6 w-6" />
+            </button>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2">
-            {/* Overview */}
-            <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-xl border border-gray-100 p-8 mb-8 transform hover:scale-[1.02] transition-all duration-300">
-              <div className="flex items-center mb-6">
-                <div className="bg-gradient-to-r from-blue-500 to-purple-500 p-3 rounded-xl mr-4 shadow-lg">
-                  <BookText className="h-6 w-6 text-white" />
-                </div>
-                <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  Sinopsis
-                </h2>
+        <div className="overflow-y-auto max-h-[calc(95vh-120px)]">
+          <div className="p-4 sm:p-6">
+            {/* Order Summary */}
+            <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-4 sm:p-6 mb-6 border border-blue-200">
+              <div className="flex items-center mb-4">
+                <Calculator className="h-6 w-6 text-blue-600 mr-3" />
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900">Resumen del Pedido</h3>
               </div>
-              <p className="text-gray-700 leading-relaxed text-lg mb-4">
-                {movie.overview || 'Sin descripción disponible.'}
-              </p>
-              {movie.tagline && (
-                <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border-l-4 border-gradient-to-b from-blue-400 to-purple-400">
-                  <p className="text-gray-600 italic text-lg font-medium">"{movie.tagline}"</p>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                <div className="bg-white rounded-xl p-4 border border-gray-200">
+                  <div className="text-center">
+                    <div className="text-2xl sm:text-3xl font-bold text-blue-600 mb-2">
+                      ${total.toLocaleString()} CUP
+                    </div>
+                    <div className="text-sm text-gray-600">Subtotal Contenido</div>
+                    <div className="text-xs text-gray-500 mt-1">${items.length} elementos</div>
+                  </div>
                 </div>
-              )}
+                
+                <div className="bg-white rounded-xl p-4 border border-gray-200">
+                  <div className="text-center">
+                    <div className="text-2xl sm:text-3xl font-bold text-green-600 mb-2">
+                      ${deliveryCost.toLocaleString()} CUP
+                    </div>
+                    <div className="text-sm text-gray-600">Costo de Entrega</div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {deliveryZone.split(' > ')[2] || 'Seleccionar zona'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-r from-green-100 to-blue-100 rounded-xl p-4 border-2 border-green-300">
+                <div className="flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0">
+                  <span className="text-lg sm:text-xl font-bold text-gray-900">Total Final:</span>
+                  <span className="text-2xl sm:text-3xl font-bold text-green-600">
+                    ${finalTotal.toLocaleString()} CUP
+                  </span>
+                </div>
+              </div>
             </div>
 
-            {/* Cast Section */}
-            <CastSection cast={cast} title="Reparto Principal" />
-
-            {/* Videos */}
-            {videos.length > 0 && (
-              <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Tráilers y Videos</h2>
-                
-                {showVideo && selectedVideo ? (
-                  <div className="mb-4">
-                    <VideoPlayer videoKey={selectedVideo.key} title={selectedVideo.name} />
-                  </div>
-                ) : (
-                  <div className="mb-4">
-                    <button
-                      onClick={() => setShowVideo(true)}
-                      className="relative w-full aspect-video bg-gray-900 rounded-lg overflow-hidden group"
-                    >
-                      <div
-                        className="absolute inset-0 bg-cover bg-center"
-                        style={{ 
-                          backgroundImage: selectedVideo 
-                            ? `url(https://img.youtube.com/vi/${selectedVideo.key}/maxresdefault.jpg)` 
-                            : `url(${backdropUrl})` 
-                        }}
+            {!orderGenerated ? (
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Customer Information */}
+                <div className="bg-white rounded-2xl p-4 sm:p-6 border border-gray-200 shadow-sm">
+                  <h3 className="text-lg sm:text-xl font-bold mb-4 flex items-center text-gray-900">
+                    <User className="h-5 w-5 mr-3 text-blue-600" />
+                    Información Personal
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="sm:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Nombre Completo *
+                      </label>
+                      <input
+                        type="text"
+                        name="fullName"
+                        value={customerInfo.fullName}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        placeholder="Ingrese su nombre completo"
                       />
-                      <div className="absolute inset-0 bg-black/50 group-hover:bg-black/40 transition-colors" />
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="bg-red-600 hover:bg-red-700 rounded-full p-4 transition-colors group-hover:scale-110">
-                          <Play className="h-8 w-8 text-white ml-1" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Teléfono *
+                      </label>
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={customerInfo.phone}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        placeholder="+53 5XXXXXXX"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Dirección Completa *
+                      </label>
+                      <input
+                        type="text"
+                        name="address"
+                        value={customerInfo.address}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        placeholder="Calle, número, entre calles..."
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Delivery Zone */}
+                <div className="bg-white rounded-2xl p-4 sm:p-6 border border-gray-200 shadow-sm">
+                  <h3 className="text-lg sm:text-xl font-bold mb-4 flex items-center text-gray-900">
+                    <MapPin className="h-5 w-5 mr-3 text-green-600" />
+                    Zona de Entrega
+                  </h3>
+                  
+                  <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-4 mb-4 border border-green-200">
+                    <div className="flex items-center mb-2">
+                      <div className="bg-green-100 p-2 rounded-lg mr-3">
+                        <span className="text-sm">📍</span>
+                      </div>
+                      <h4 className="font-semibold text-green-900">Información de Entrega</h4>
+                    </div>
+                    <p className="text-sm text-green-700 ml-11">
+                      Seleccione su zona para calcular el costo de entrega. Los precios pueden variar según la distancia.
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Seleccionar Barrio/Zona *
+                    </label>
+                    <select
+                      value={deliveryZone}
+                      onChange={(e) => setDeliveryZone(e.target.value)}
+                      required
+                      className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:border-transparent transition-all bg-white ${
+                        deliveryZone === 'Por favor seleccionar su Barrio/Zona'
+                          ? 'border-orange-300 focus:ring-orange-500 bg-orange-50'
+                          : 'border-gray-300 focus:ring-green-500'
+                      }`}
+                    >
+                      {Object.entries(allZones).map(([zone, cost]) => (
+                        <option key={zone} value={zone}>
+                          {zone === 'Por favor seleccionar su Barrio/Zona' 
+                            ? zone 
+                            : `${zone.split(' > ')[2] || zone} ${cost > 0 ? `- $${cost.toLocaleString()} CUP` : ''}`
+                          }
+                        </option>
+                      ))}
+                    </select>
+                    
+                    {deliveryZone === 'Por favor seleccionar su Barrio/Zona' && (
+                      <div className="mt-3 p-3 bg-orange-50 rounded-lg border border-orange-200">
+                        <div className="flex items-center">
+                          <span className="text-orange-600 mr-2">⚠️</span>
+                          <span className="text-sm font-medium text-orange-700">
+                            Por favor seleccione su zona de entrega para continuar
+                          </span>
                         </div>
                       </div>
-                      <div className="absolute bottom-4 left-4 text-white">
-                        <p className="font-medium">Reproducir Tráiler</p>
-                        <p className="text-sm opacity-75">{selectedVideo?.name}</p>
+                    )}
+                    
+                    {deliveryZone !== 'Por favor seleccionar su Barrio/Zona' && (
+                      <div className="mt-3 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-xl border border-green-200">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center">
+                            <div className="bg-green-100 p-2 rounded-lg mr-3">
+                              <span className="text-sm">{deliveryCost > 0 ? '🚚' : '🏪'}</span>
+                            </div>
+                            <span className="text-sm font-semibold text-green-800">
+                              {deliveryCost > 0 ? 'Costo de entrega confirmado:' : 'Recogida confirmada:'}
+                            </span>
+                          </div>
+                          <div className="bg-white rounded-lg px-3 py-2 border border-green-300">
+                            <span className="text-lg font-bold text-green-600">
+                              {deliveryCost > 0 ? `$${deliveryCost.toLocaleString()} CUP` : 'GRATIS'}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-xs text-green-600 ml-11">
+                          ✅ {deliveryCost > 0 ? 'Zona' : 'Modalidad'}: {deliveryZone.split(' > ')[2] || deliveryZone}
+                        </div>
                       </div>
-                    </button>
+                    )}
                   </div>
-                )}
+                </div>
 
-                {videos.length > 1 && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {videos.map((video) => (
-                      <button
-                        key={video.id}
-                        onClick={() => {
-                          setSelectedVideo(video);
-                          setShowVideo(true);
-                        }}
-                        className={`p-3 rounded-lg border-2 text-left transition-colors ${
-                          selectedVideo?.id === video.id
-                            ? 'border-blue-500 bg-blue-50'
-                            : 'border-gray-200 hover:border-blue-300'
-                        }`}
-                      >
-                        <p className="font-medium text-gray-900">{video.name}</p>
-                        <p className="text-sm text-gray-600">{video.type}</p>
-                      </button>
-                    ))}
-                  </div>
-                )}
+                {/* Action Buttons */}
+                <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="flex-1 px-6 py-4 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all font-medium"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleGenerateOrder}
+                    disabled={!isFormValid || deliveryZone === 'Por favor seleccionar su Barrio/Zona'}
+                    className={`flex-1 px-6 py-4 rounded-xl transition-all font-medium ${
+                      isFormValid && deliveryZone !== 'Por favor seleccionar su Barrio/Zona'
+                        ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white'
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
+                  >
+                    Generar Orden
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isProcessing || !isFormValid || deliveryZone === 'Por favor seleccionar su Barrio/Zona'}
+                    className="flex-1 px-6 py-4 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl transition-all font-medium flex items-center justify-center"
+                  >
+                    {isProcessing ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                        Procesando...
+                      </>
+                    ) : (
+                      <>
+                        <MessageCircle className="h-5 w-5 mr-2" />
+                        Enviar por WhatsApp
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              /* Generated Order Display */
+              <div className="bg-white rounded-2xl p-4 sm:p-6 border border-gray-200 shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 space-y-2 sm:space-y-0">
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 flex items-center">
+                    <Check className="h-6 w-6 text-green-600 mr-3" />
+                    Orden Generada
+                  </h3>
+                  <button
+                    onClick={handleCopyOrder}
+                    className={`px-4 py-2 rounded-xl font-medium transition-all flex items-center justify-center ${
+                      copied
+                        ? 'bg-green-100 text-green-700 border border-green-300'
+                        : 'bg-blue-100 text-blue-700 border border-blue-300 hover:bg-blue-200'
+                    }`}
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="h-4 w-4 mr-2" />
+                        ¡Copiado!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-4 w-4 mr-2" />
+                        Copiar Orden
+                      </>
+                    )}
+                  </button>
+                </div>
+                
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 max-h-96 overflow-y-auto">
+                  <pre className="text-xs sm:text-sm text-gray-800 whitespace-pre-wrap font-mono leading-relaxed">
+                    {generatedOrder}
+                  </pre>
+                </div>
+                
+                <div className="flex flex-col sm:flex-row gap-3 mt-6">
+                  <button
+                    onClick={() => setOrderGenerated(false)}
+                    className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all font-medium"
+                  >
+                    Volver a Editar
+                  </button>
+                  <button
+                    onClick={handleSubmit}
+                    disabled={isProcessing || !isFormValid}
+                    className="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 disabled:opacity-50 text-white rounded-xl transition-all font-medium flex items-center justify-center"
+                  >
+                    {isProcessing ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                        Enviando...
+                      </>
+                    ) : (
+                      <>
+                        <MessageCircle className="h-5 w-5 mr-2" />
+                        Enviar por WhatsApp
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             )}
           </div>
-
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-xl border border-gray-100 overflow-hidden sticky top-8">
-              <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white">
-                <h3 className="text-xl font-bold flex items-center">
-                  <div className="bg-white/20 p-2 rounded-lg mr-3">
-                    <Clapperboard className="h-6 w-6" />
-                  </div>
-                  Detalles de la Película
-                </h3>
-              </div>
-              
-              <div className="p-6">
-                <button
-                  onClick={handleCartAction}
-                  onMouseEnter={() => setIsCartHovered(true)}
-                  onMouseLeave={() => setIsCartHovered(false)}
-                  className={`w-full mb-6 px-6 py-5 rounded-2xl font-bold transition-all duration-500 flex items-center justify-center transform relative overflow-hidden ${
-                  inCart
-                    ? 'bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 hover:from-green-600 hover:via-emerald-600 hover:to-teal-600 text-white shadow-2xl scale-105'
-                    : 'bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 text-white shadow-xl'
-                } ${isCartHovered ? 'scale-110 shadow-2xl' : ''} ${showCartAnimation ? 'animate-pulse' : ''}`}
-                >
-                {/* Animated background effect */}
-                <div className={`absolute inset-0 bg-gradient-to-r from-white/20 to-transparent transition-all duration-500 ${
-                  isCartHovered ? 'animate-pulse' : ''
-                }`} />
-                
-                {/* Floating icons */}
-                {isCartHovered && (
-                  <>
-                    <Sparkles className="absolute top-2 left-4 h-4 w-4 text-yellow-300 animate-bounce" />
-                    <Heart className="absolute top-2 right-4 h-4 w-4 text-pink-300 animate-pulse" />
-                    <Zap className="absolute bottom-2 left-6 h-4 w-4 text-blue-300 animate-bounce delay-100" />
-                    <Star className="absolute bottom-2 right-6 h-4 w-4 text-yellow-300 animate-pulse delay-200" />
-                  </>
-                )}
-                
-                {inCart ? (
-                  <>
-                    <X className={`mr-3 h-6 w-6 transition-transform duration-300 relative z-10 ${
-                      isCartHovered ? 'rotate-90 scale-125' : ''
-                    }`} />
-                    <span className="relative z-10 text-lg">Retirar del Carrito</span>
-                  </>
-                ) : (
-                  <>
-                    <Plus className={`mr-3 h-6 w-6 transition-transform duration-300 relative z-10 ${
-                      isCartHovered ? 'rotate-180 scale-125' : ''
-                    }`} />
-                    <span className="relative z-10 text-lg">Agregar al Carrito</span>
-                  </>
-                )}
-                </button>
-                
-                {/* Success indicator */}
-                {inCart && (
-                  <div className="absolute -top-2 -right-2 bg-gradient-to-r from-green-400 to-emerald-400 text-white p-2 rounded-full animate-bounce shadow-lg">
-                    <Star className="h-4 w-4" />
-                  </div>
-                )}
-              </div>
-
-
-
-              </div>
-
-              {/* Price Card */}
-              <div className="mb-6">
-                <PriceCard 
-                  type="movie" 
-                  isAnime={isAnime}
-                />
-              </div>
-
-              <div className="space-y-6">
-                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-blue-200 transition-colors">
-                  <div className="flex items-center mb-2">
-                    <div className="bg-blue-100 p-2 rounded-lg mr-3 shadow-sm">
-                      <Film className="h-4 w-4 text-blue-600" />
-                    </div>
-                    <h3 className="font-semibold text-gray-900">Estado</h3>
-                  </div>
-                  <p className="text-gray-700 font-medium ml-11">{movie.status}</p>
-                </div>
-                
-                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-purple-200 transition-colors">
-                  <div className="flex items-center mb-2">
-                    <div className="bg-purple-100 p-2 rounded-lg mr-3 shadow-sm">
-                      <Globe className="h-4 w-4 text-purple-600" />
-                    </div>
-                    <h3 className="font-semibold text-gray-900">Idioma Original</h3>
-                  </div>
-                  <p className="text-gray-700 font-medium ml-11">{movie.original_language.toUpperCase()}</p>
-                </div>
-                
-                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-green-200 transition-colors">
-                  <div className="flex items-center mb-2">
-                    <div className="bg-green-100 p-2 rounded-lg mr-3 shadow-sm">
-                      <DollarSign className="h-4 w-4 text-green-600" />
-                    </div>
-                    <h3 className="font-semibold text-gray-900">Presupuesto</h3>
-                  </div>
-                  <p className="text-gray-700 font-medium ml-11">
-                    {movie.budget > 0
-                      ? `$${movie.budget.toLocaleString()}`
-                      : 'No disponible'
-                    }
-                  </p>
-                </div>
-                
-                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-yellow-200 transition-colors">
-                  <div className="flex items-center mb-2">
-                    <div className="bg-yellow-100 p-2 rounded-lg mr-3 shadow-sm">
-                      <TrendingUp className="h-4 w-4 text-yellow-600" />
-                    </div>
-                    <h3 className="font-semibold text-gray-900">Recaudación</h3>
-                  </div>
-                  <p className="text-gray-700 font-medium ml-11">
-                    {movie.revenue > 0
-                      ? `$${movie.revenue.toLocaleString()}`
-                      : 'No disponible'
-                    }
-                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-pink-200 transition-colors">
-                  <div className="flex items-center mb-2">
-                    <div className="bg-pink-100 p-2 rounded-lg mr-3 shadow-sm">
-                      <Users className="h-4 w-4 text-pink-600" />
-                    </div>
-                    <h3 className="font-semibold text-gray-900">Votos</h3>
-                  </div>
-                  <p className="text-gray-700 font-medium ml-11">
-                    {movie.vote_count.toLocaleString()} votos
-                  </p>
-                </div>
-                  </p>
-                {movie.production_companies.length > 0 && (
-                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-indigo-200 transition-colors">
-                    <div className="flex items-center mb-3">
-                      <div className="bg-indigo-100 p-2 rounded-lg mr-3 shadow-sm">
-                        <Building className="h-4 w-4 text-indigo-600" />
-                      </div>
-                      <h3 className="font-semibold text-gray-900">Productoras</h3>
-                    </div>
-                    <div className="space-y-2 ml-11">
-                      {movie.production_companies.slice(0, 3).map((company) => (
-                        <div key={company.id} className="bg-white rounded-lg p-2 border border-gray-200">
-                          <p className="text-gray-700 text-sm font-medium">
-                          {company.name}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                </div>
-                {movie.production_countries.length > 0 && (
-                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-orange-200 transition-colors">
-                    <div className="flex items-center mb-3">
-                      <div className="bg-orange-100 p-2 rounded-lg mr-3 shadow-sm">
-                        <Globe className="h-4 w-4 text-orange-600" />
-                      </div>
-                      <h3 className="font-semibold text-gray-900">Países</h3>
-                    </div>
-                    <div className="space-y-2 ml-11">
-                      {movie.production_countries.map((country) => (
-                        <div key={country.iso_3166_1} className="bg-white rounded-lg p-2 border border-gray-200">
-                          <p className="text-gray-700 text-sm font-medium">
-                            {country.name}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
         </div>
       </div>
+    </div>
   );
 }
