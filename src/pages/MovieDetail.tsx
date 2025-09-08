@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Star, Calendar, Clock, Plus, X, Play, Film, Globe, DollarSign, TrendingUp, Users, Building, Sparkles, Heart, Zap } from 'lucide-react';
+import { ArrowLeft, Star, Calendar, Clock, Plus, X, Play, Film, Globe, DollarSign, TrendingUp, Users, Building, Sparkles, Heart, Zap, BookText, Info, Clapperboard } from 'lucide-react';
 import { tmdbService } from '../services/tmdb';
 import { VideoPlayer } from '../components/VideoPlayer';
 import { PriceCard } from '../components/PriceCard';
@@ -184,7 +184,7 @@ export function MovieDetail() {
             <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-xl border border-gray-100 p-8 mb-8 transform hover:scale-[1.02] transition-all duration-300">
               <div className="flex items-center mb-6">
                 <div className="bg-gradient-to-r from-blue-500 to-purple-500 p-3 rounded-xl mr-4 shadow-lg">
-                  <span className="text-2xl">📚</span>
+                  <BookText className="h-6 w-6 text-white" />
                 </div>
                 <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                   Sinopsis
@@ -271,7 +271,7 @@ export function MovieDetail() {
               <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white">
                 <h3 className="text-xl font-bold flex items-center">
                   <div className="bg-white/20 p-2 rounded-lg mr-3">
-                    <span className="text-lg">🎬</span>
+                    <Clapperboard className="h-6 w-6" />
                   </div>
                   Detalles de la Película
                 </h3>
