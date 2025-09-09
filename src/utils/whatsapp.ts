@@ -128,19 +128,6 @@ export function sendOrderToWhatsApp(orderData: OrderData): void {
   message += `${deliveryZone.replace(' > ', ' → ')}\n`;
   message += `💰 Costo de entrega: $${deliveryCost.toLocaleString()} CUP\n\n`;
   
-  // Agregar información de ubicación si es oficina central
-  if (deliveryZone.toLowerCase().includes('oficina central')) {
-    message += `📍 *INFORMACIÓN DE UBICACIÓN:*\n`;
-    message += `🏢 TV a la Carta - Oficina Central\n`;
-    message += `📍 Ubicación: Reparto Nuevo Vista Alegre, Santiago de Cuba\n`;
-    message += `🗺️ Coordenadas: 20.039585, -75.849663\n`;
-    message += `📏 Distancia estimada desde cliente: 5.2 km aprox.\n`;
-    message += `🚗 Tiempo en automóvil: 12 min aprox.\n`;
-    message += `🚲 Tiempo en bicicleta: 18 min aprox.\n`;
-    message += `🚶 Tiempo caminando: 45 min aprox.\n`;
-    message += `🗺️ Ver ubicación: https://www.google.com/maps/place/20%C2%B002'22.5%22N+75%C2%B050'58.8%22W/@20.0394604,-75.8495414,180m/data=!3m1!1e3!4m4!3m3!8m2!3d20.039585!4d-75.849663?entry=ttu&g_ep=EgoyMDI1MDczMC4wIKXMDSoASAFQAw%3D%3D\n\n`;
-  }
-  
   message += `📊 *ESTADÍSTICAS DEL PEDIDO:*\n`;
   message += `• Total de elementos: ${items.length}\n`;
   message += `• Películas: ${items.filter(item => item.type === 'movie').length}\n`;
@@ -150,18 +137,6 @@ export function sendOrderToWhatsApp(orderData: OrderData): void {
   }
   if (transferItems.length > 0) {
     message += `• Pago por transferencia: ${transferItems.length} elementos\n`;
-  }
-  
-  // Información de entrega
-  const isPickup = deliveryZone.toLowerCase().includes('recogida') || deliveryZone.toLowerCase().includes('local');
-  if (isPickup) {
-    message += `• Modalidad: Recogida en el local\n`;
-    message += `• Costo de entrega: GRATIS\n`;
-  } else if (deliveryCost > 0) {
-    message += `• Modalidad: Entrega a domicilio\n`;
-    message += `• Costo de entrega: $${deliveryCost.toLocaleString()} CUP\n`;
-  } else {
-    message += `• Modalidad: Entrega gratuita\n`;
   }
   message += `\n`;
   
