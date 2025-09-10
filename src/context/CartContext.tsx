@@ -5,9 +5,9 @@ import type { CartItem } from '../types/movie';
 // PRECIOS EMBEBIDOS - Generados automáticamente
 const EMBEDDED_PRICES = {
   "moviePrice": 80,
-  "seriesPrice": 300,
-  "transferFeePercentage": 10,
-  "novelPricePerChapter": 5
+  "seriesPrice": 400,
+  "transferFeePercentage": 18,
+  "novelPricePerChapter": 20
 };
 
 interface SeriesCartItem extends CartItem {
@@ -92,7 +92,8 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         total: action.payload.length
       };
     case 'UPDATE_PRICES':
-      return state; // Los precios se actualizan dinámicamente
+      // Prices updated from admin panel - no state change needed, just re-render
+      return { ...state };
     default:
       return state;
   }
@@ -100,42 +101,29 @@ function cartReducer(state: CartState, action: CartAction): CartState {
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, { items: [], total: 0 });
+  const [currentPrices, setCurrentPrices] = React.useState(EMBEDDED_PRICES);
   const [toast, setToast] = React.useState<{
     message: string;
     type: 'success' | 'error';
     isVisible: boolean;
   }>({ message: '', type: 'success', isVisible: false });
 
-  // Función para obtener precios actuales del admin
-  const getCurrentPrices = () => {
-    try {
-      const adminState = localStorage.getItem('admin_system_state');
-      if (adminState) {
-        const state = JSON.parse(adminState);
-        return state.prices || EMBEDDED_PRICES;
-      }
-    } catch (error) {
-      console.warn('Error getting current prices:', error);
-    }
-    return EMBEDDED_PRICES;
-  };
-
-  // Escuchar cambios en el admin
-  React.useEffect(() => {
-    const handleAdminChange = (event: CustomEvent) => {
-      if (event.detail.type === 'prices') {
-        dispatch({ type: 'UPDATE_PRICES', payload: event.detail.data });
-      }
+  // Listen for real-time price updates from admin panel
+  useEffect(() => {
+    const handlePriceUpdate = (event: CustomEvent) => {
+      setCurrentPrices(event.detail);
+      dispatch({ type: 'UPDATE_PRICES', payload: event.detail });
     };
 
-    window.addEventListener('admin_state_change', handleAdminChange as EventListener);
+    window.addEventListener('admin_prices_updated', handlePriceUpdate as EventListener);
+    
     return () => {
-      window.removeEventListener('admin_state_change', handleAdminChange as EventListener);
+      window.removeEventListener('admin_prices_updated', handlePriceUpdate as EventListener);
     };
   }, []);
 
   // Clear cart on page refresh
-  React.useEffect(() => {
+  useEffect(() => {
     const handleBeforeUnload = () => {
       sessionStorage.setItem('pageRefreshed', 'true');
     };
@@ -163,7 +151,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (sessionStorage.getItem('pageRefreshed') !== 'true') {
       const savedCart = localStorage.getItem('movieCart');
       if (savedCart) {
@@ -177,7 +165,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     localStorage.setItem('movieCart', JSON.stringify(state.items));
   }, [state.items]);
 
@@ -236,15 +224,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   };
 
   const calculateItemPrice = (item: SeriesCartItem): number => {
-    const currentPrices = getCurrentPrices();
+    // Use current prices (updated in real-time from admin panel)
+    const moviePrice = currentPrices.moviePrice;
+    const seriesPrice = currentPrices.seriesPrice;
+    const transferFeePercentage = currentPrices.transferFeePercentage;
     
     if (item.type === 'movie') {
-      const basePrice = currentPrices.moviePrice;
-      return item.paymentType === 'transfer' ? Math.round(basePrice * (1 + currentPrices.transferFeePercentage / 100)) : basePrice;
+      const basePrice = moviePrice;
+      return item.paymentType === 'transfer' ? Math.round(basePrice * (1 + transferFeePercentage / 100)) : basePrice;
     } else {
       const seasons = item.selectedSeasons?.length || 1;
-      const basePrice = seasons * currentPrices.seriesPrice;
-      return item.paymentType === 'transfer' ? Math.round(basePrice * (1 + currentPrices.transferFeePercentage / 100)) : basePrice;
+      const basePrice = seasons * seriesPrice;
+      return item.paymentType === 'transfer' ? Math.round(basePrice * (1 + transferFeePercentage / 100)) : basePrice;
     }
   };
 
@@ -255,12 +246,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   };
 
   const calculateTotalByPaymentType = (): { cash: number; transfer: number } => {
-    const currentPrices = getCurrentPrices();
+    const moviePrice = currentPrices.moviePrice;
+    const seriesPrice = currentPrices.seriesPrice;
+    const transferFeePercentage = currentPrices.transferFeePercentage;
     
     return state.items.reduce((totals, item) => {
-      const basePrice = item.type === 'movie' ? currentPrices.moviePrice : (item.selectedSeasons?.length || 1) * currentPrices.seriesPrice;
+      const basePrice = item.type === 'movie' ? moviePrice : (item.selectedSeasons?.length || 1) * seriesPrice;
       if (item.paymentType === 'transfer') {
-        totals.transfer += Math.round(basePrice * (1 + currentPrices.transferFeePercentage / 100));
+        totals.transfer += Math.round(basePrice * (1 + transferFeePercentage / 100));
       } else {
         totals.cash += basePrice;
       }
