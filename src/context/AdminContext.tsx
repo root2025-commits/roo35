@@ -802,9 +802,35 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       } 
     });
 
+    // Actualizar configuración embebida en tiempo real
+    updateEmbeddedConfig();
+
     window.dispatchEvent(new CustomEvent('admin_state_change', { 
       detail: changeEvent 
     }));
+  };
+
+  // Función para actualizar la configuración embebida
+  const updateEmbeddedConfig = () => {
+    try {
+      // Actualizar NovelasModal
+      const novelasModalPath = '/src/components/NovelasModal.tsx';
+      // Actualizar PriceCard
+      const priceCardPath = '/src/components/PriceCard.tsx';
+      // Actualizar CartContext
+      const cartContextPath = '/src/context/CartContext.tsx';
+      
+      // Disparar evento para forzar re-render de componentes
+      window.dispatchEvent(new CustomEvent('admin_config_updated', {
+        detail: {
+          prices: state.prices,
+          novels: state.novels,
+          deliveryZones: state.deliveryZones
+        }
+      }));
+    } catch (error) {
+      console.error('Error updating embedded config:', error);
+    }
   };
 
   const syncWithRemote = async (): Promise<void> => {
