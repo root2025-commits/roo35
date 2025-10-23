@@ -66,7 +66,13 @@ export function Home() {
   const fetchAllContent = async () => {
     try {
       setLoading(true);
-      
+
+      // Clear hero content cache to ensure fresh Spanish content
+      const heroKeys = Object.keys(localStorage).filter(key =>
+        key.includes('trending') || key.includes('fresh_')
+      );
+      heroKeys.forEach(key => localStorage.removeItem(key));
+
       // Get hero content first (no duplicates)
       const heroContent = await tmdbService.getHeroContent();
       setHeroItems(heroContent);
