@@ -1,36 +1,29 @@
-import { useState, useEffect } from 'react';
-import { contentSyncService } from '../services/contentSync';
-import type { Movie, TVShow } from '../types/movie';
-
+import __vite__cjsImport0_react from "/node_modules/.vite/deps/react.js?v=e1a317db"; const useState = __vite__cjsImport0_react["useState"]; const useEffect = __vite__cjsImport0_react["useEffect"];
+import { contentSyncService } from "/src/services/contentSync.ts";
 export function useContentSync() {
   const [isLoading, setIsLoading] = useState(false);
-  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
-
+  const [lastUpdate, setLastUpdate] = useState(null);
   const refreshContent = async () => {
     setIsLoading(true);
     try {
       await contentSyncService.forceRefresh();
-      setLastUpdate(new Date());
+      setLastUpdate(/* @__PURE__ */ new Date());
     } catch (error) {
-      console.error('Error refreshing content:', error);
+      console.error("Error refreshing content:", error);
     } finally {
       setIsLoading(false);
     }
   };
-
-  const getTrendingContent = async (timeWindow: 'day' | 'week'): Promise<(Movie | TVShow)[]> => {
+  const getTrendingContent = async (timeWindow) => {
     return await contentSyncService.getTrendingContent(timeWindow);
   };
-
   const getPopularContent = async () => {
     return await contentSyncService.getPopularContent();
   };
-
   useEffect(() => {
     const status = contentSyncService.getSyncStatus();
     setLastUpdate(status.lastDaily);
   }, []);
-
   return {
     isLoading,
     lastUpdate,
@@ -39,3 +32,5 @@ export function useContentSync() {
     getPopularContent
   };
 }
+
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbInVzZUNvbnRlbnRTeW5jLnRzIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IHVzZVN0YXRlLCB1c2VFZmZlY3QgfSBmcm9tICdyZWFjdCc7XG5pbXBvcnQgeyBjb250ZW50U3luY1NlcnZpY2UgfSBmcm9tICcuLi9zZXJ2aWNlcy9jb250ZW50U3luYyc7XG5pbXBvcnQgdHlwZSB7IE1vdmllLCBUVlNob3cgfSBmcm9tICcuLi90eXBlcy9tb3ZpZSc7XG5cbmV4cG9ydCBmdW5jdGlvbiB1c2VDb250ZW50U3luYygpIHtcbiAgY29uc3QgW2lzTG9hZGluZywgc2V0SXNMb2FkaW5nXSA9IHVzZVN0YXRlKGZhbHNlKTtcbiAgY29uc3QgW2xhc3RVcGRhdGUsIHNldExhc3RVcGRhdGVdID0gdXNlU3RhdGU8RGF0ZSB8IG51bGw+KG51bGwpO1xuXG4gIGNvbnN0IHJlZnJlc2hDb250ZW50ID0gYXN5bmMgKCkgPT4ge1xuICAgIHNldElzTG9hZGluZyh0cnVlKTtcbiAgICB0cnkge1xuICAgICAgYXdhaXQgY29udGVudFN5bmNTZXJ2aWNlLmZvcmNlUmVmcmVzaCgpO1xuICAgICAgc2V0TGFzdFVwZGF0ZShuZXcgRGF0ZSgpKTtcbiAgICB9IGNhdGNoIChlcnJvcikge1xuICAgICAgY29uc29sZS5lcnJvcignRXJyb3IgcmVmcmVzaGluZyBjb250ZW50OicsIGVycm9yKTtcbiAgICB9IGZpbmFsbHkge1xuICAgICAgc2V0SXNMb2FkaW5nKGZhbHNlKTtcbiAgICB9XG4gIH07XG5cbiAgY29uc3QgZ2V0VHJlbmRpbmdDb250ZW50ID0gYXN5bmMgKHRpbWVXaW5kb3c6ICdkYXknIHwgJ3dlZWsnKTogUHJvbWlzZTwoTW92aWUgfCBUVlNob3cpW10+ID0+IHtcbiAgICByZXR1cm4gYXdhaXQgY29udGVudFN5bmNTZXJ2aWNlLmdldFRyZW5kaW5nQ29udGVudCh0aW1lV2luZG93KTtcbiAgfTtcblxuICBjb25zdCBnZXRQb3B1bGFyQ29udGVudCA9IGFzeW5jICgpID0+IHtcbiAgICByZXR1cm4gYXdhaXQgY29udGVudFN5bmNTZXJ2aWNlLmdldFBvcHVsYXJDb250ZW50KCk7XG4gIH07XG5cbiAgdXNlRWZmZWN0KCgpID0+IHtcbiAgICBjb25zdCBzdGF0dXMgPSBjb250ZW50U3luY1NlcnZpY2UuZ2V0U3luY1N0YXR1cygpO1xuICAgIHNldExhc3RVcGRhdGUoc3RhdHVzLmxhc3REYWlseSk7XG4gIH0sIFtdKTtcblxuICByZXR1cm4ge1xuICAgIGlzTG9hZGluZyxcbiAgICBsYXN0VXBkYXRlLFxuICAgIHJlZnJlc2hDb250ZW50LFxuICAgIGdldFRyZW5kaW5nQ29udGVudCxcbiAgICBnZXRQb3B1bGFyQ29udGVudFxuICB9O1xufSJdLCJtYXBwaW5ncyI6IkFBQUEsU0FBUyxVQUFVLGlCQUFpQjtBQUNwQyxTQUFTLDBCQUEwQjtBQUc1QixnQkFBUyxpQkFBaUI7QUFDL0IsUUFBTSxDQUFDLFdBQVcsWUFBWSxJQUFJLFNBQVMsS0FBSztBQUNoRCxRQUFNLENBQUMsWUFBWSxhQUFhLElBQUksU0FBc0IsSUFBSTtBQUU5RCxRQUFNLGlCQUFpQixZQUFZO0FBQ2pDLGlCQUFhLElBQUk7QUFDakIsUUFBSTtBQUNGLFlBQU0sbUJBQW1CLGFBQWE7QUFDdEMsb0JBQWMsb0JBQUksS0FBSyxDQUFDO0FBQUEsSUFDMUIsU0FBUyxPQUFPO0FBQ2QsY0FBUSxNQUFNLDZCQUE2QixLQUFLO0FBQUEsSUFDbEQsVUFBRTtBQUNBLG1CQUFhLEtBQUs7QUFBQSxJQUNwQjtBQUFBLEVBQ0Y7QUFFQSxRQUFNLHFCQUFxQixPQUFPLGVBQTREO0FBQzVGLFdBQU8sTUFBTSxtQkFBbUIsbUJBQW1CLFVBQVU7QUFBQSxFQUMvRDtBQUVBLFFBQU0sb0JBQW9CLFlBQVk7QUFDcEMsV0FBTyxNQUFNLG1CQUFtQixrQkFBa0I7QUFBQSxFQUNwRDtBQUVBLFlBQVUsTUFBTTtBQUNkLFVBQU0sU0FBUyxtQkFBbUIsY0FBYztBQUNoRCxrQkFBYyxPQUFPLFNBQVM7QUFBQSxFQUNoQyxHQUFHLENBQUMsQ0FBQztBQUVMLFNBQU87QUFBQSxJQUNMO0FBQUEsSUFDQTtBQUFBLElBQ0E7QUFBQSxJQUNBO0FBQUEsSUFDQTtBQUFBLEVBQ0Y7QUFDRjsiLCJuYW1lcyI6W119

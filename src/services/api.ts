@@ -1,100 +1,70 @@
-// Centralized API service for better error handling and caching
-import { BASE_URL, API_OPTIONS } from '../config/api';
-
+import { BASE_URL, API_OPTIONS } from "/src/config/api.ts";
 export class APIService {
-  private cache = new Map<string, { data: any; timestamp: number }>();
-  private readonly CACHE_DURATION = 30 * 60 * 1000; // 30 minutes for regular content
-  private readonly FRESH_CACHE_DURATION = 15 * 60 * 1000; // 15 minutes for trending/current content
-
-  async fetchWithCache<T>(endpoint: string, useCache: boolean = true): Promise<T> {
+  cache = /* @__PURE__ */ new Map();
+  CACHE_DURATION = 30 * 60 * 1e3;
+  // 30 minutes for regular content
+  FRESH_CACHE_DURATION = 15 * 60 * 1e3;
+  // 15 minutes for trending/current content
+  async fetchWithCache(endpoint, useCache = true) {
     const cacheKey = endpoint;
     const cacheDuration = this.getCacheDuration(endpoint);
-    
     if (useCache && this.cache.has(cacheKey)) {
-      const cached = this.cache.get(cacheKey)!;
+      const cached = this.cache.get(cacheKey);
       const isExpired = Date.now() - cached.timestamp > cacheDuration;
-      
       if (!isExpired) {
         return cached.data;
       }
     }
-
     try {
       const response = await fetch(`${BASE_URL}${endpoint}`, API_OPTIONS);
-      
       if (!response.ok) {
-        // Handle 404 errors gracefully for video endpoints
-        if (response.status === 404 && endpoint.includes('/videos')) {
+        if (response.status === 404 && endpoint.includes("/videos")) {
           console.warn(`Videos not found for endpoint: ${endpoint}`);
-          return { results: [] } as T;
+          return { results: [] };
         }
-        // Handle 404 errors gracefully for details and credits endpoints
-        if (response.status === 404 && (endpoint.includes('/movie/') || endpoint.includes('/tv/'))) {
+        if (response.status === 404 && (endpoint.includes("/movie/") || endpoint.includes("/tv/"))) {
           console.warn(`Content not found for endpoint: ${endpoint}`);
-          return null as T;
+          return null;
         }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
       const data = await response.json();
-      
       if (useCache) {
         this.cache.set(cacheKey, { data, timestamp: Date.now() });
       }
-      
       return data;
     } catch (error) {
       console.error(`API Error for ${endpoint}:`, error);
-      
-      // Handle video endpoints specifically
-      if (endpoint.includes('/videos')) {
+      if (endpoint.includes("/videos")) {
         console.warn(`Returning empty videos for ${endpoint}`);
-        return { results: [] } as T;
+        return { results: [] };
       }
-      
-      // Return cached data if available, even if expired
       if (this.cache.has(cacheKey)) {
         console.warn(`Using expired cache for ${endpoint}`);
-        return this.cache.get(cacheKey)!.data;
+        return this.cache.get(cacheKey).data;
       }
-      
       throw error;
     }
   }
-
-  private getCacheDuration(endpoint: string): number {
-    // Use shorter cache for trending, popular, and current content
-    if (endpoint.includes('/trending') || 
-        endpoint.includes('/now_playing') || 
-        endpoint.includes('/airing_today') || 
-        endpoint.includes('/on_the_air') ||
-        endpoint.includes('/popular')) {
+  getCacheDuration(endpoint) {
+    if (endpoint.includes("/trending") || endpoint.includes("/now_playing") || endpoint.includes("/airing_today") || endpoint.includes("/on_the_air") || endpoint.includes("/popular")) {
       return this.FRESH_CACHE_DURATION;
     }
     return this.CACHE_DURATION;
   }
-
-  clearCache(): void {
+  clearCache() {
     this.cache.clear();
-    
-    // Also clear localStorage caches
     const keys = Object.keys(localStorage);
-    keys.forEach(key => {
-      if (key.startsWith('fresh_') || 
-          key.includes('trending') || 
-          key.includes('popular') || 
-          key.includes('now_playing') || 
-          key.includes('airing')) {
+    keys.forEach((key) => {
+      if (key.startsWith("fresh_") || key.includes("trending") || key.includes("popular") || key.includes("now_playing") || key.includes("airing")) {
         localStorage.removeItem(key);
       }
     });
   }
-
-  getCacheSize(): number {
+  getCacheSize() {
     return this.cache.size;
   }
-
-  getCacheInfo(): { key: string; age: number }[] {
+  getCacheInfo() {
     const now = Date.now();
     return Array.from(this.cache.entries()).map(([key, { timestamp }]) => ({
       key,
@@ -102,5 +72,6 @@ export class APIService {
     }));
   }
 }
-
 export const apiService = new APIService();
+
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbImFwaS50cyJdLCJzb3VyY2VzQ29udGVudCI6WyIvLyBDZW50cmFsaXplZCBBUEkgc2VydmljZSBmb3IgYmV0dGVyIGVycm9yIGhhbmRsaW5nIGFuZCBjYWNoaW5nXG5pbXBvcnQgeyBCQVNFX1VSTCwgQVBJX09QVElPTlMgfSBmcm9tICcuLi9jb25maWcvYXBpJztcblxuZXhwb3J0IGNsYXNzIEFQSVNlcnZpY2Uge1xuICBwcml2YXRlIGNhY2hlID0gbmV3IE1hcDxzdHJpbmcsIHsgZGF0YTogYW55OyB0aW1lc3RhbXA6IG51bWJlciB9PigpO1xuICBwcml2YXRlIHJlYWRvbmx5IENBQ0hFX0RVUkFUSU9OID0gMzAgKiA2MCAqIDEwMDA7IC8vIDMwIG1pbnV0ZXMgZm9yIHJlZ3VsYXIgY29udGVudFxuICBwcml2YXRlIHJlYWRvbmx5IEZSRVNIX0NBQ0hFX0RVUkFUSU9OID0gMTUgKiA2MCAqIDEwMDA7IC8vIDE1IG1pbnV0ZXMgZm9yIHRyZW5kaW5nL2N1cnJlbnQgY29udGVudFxuXG4gIGFzeW5jIGZldGNoV2l0aENhY2hlPFQ+KGVuZHBvaW50OiBzdHJpbmcsIHVzZUNhY2hlOiBib29sZWFuID0gdHJ1ZSk6IFByb21pc2U8VD4ge1xuICAgIGNvbnN0IGNhY2hlS2V5ID0gZW5kcG9pbnQ7XG4gICAgY29uc3QgY2FjaGVEdXJhdGlvbiA9IHRoaXMuZ2V0Q2FjaGVEdXJhdGlvbihlbmRwb2ludCk7XG4gICAgXG4gICAgaWYgKHVzZUNhY2hlICYmIHRoaXMuY2FjaGUuaGFzKGNhY2hlS2V5KSkge1xuICAgICAgY29uc3QgY2FjaGVkID0gdGhpcy5jYWNoZS5nZXQoY2FjaGVLZXkpITtcbiAgICAgIGNvbnN0IGlzRXhwaXJlZCA9IERhdGUubm93KCkgLSBjYWNoZWQudGltZXN0YW1wID4gY2FjaGVEdXJhdGlvbjtcbiAgICAgIFxuICAgICAgaWYgKCFpc0V4cGlyZWQpIHtcbiAgICAgICAgcmV0dXJuIGNhY2hlZC5kYXRhO1xuICAgICAgfVxuICAgIH1cblxuICAgIHRyeSB7XG4gICAgICBjb25zdCByZXNwb25zZSA9IGF3YWl0IGZldGNoKGAke0JBU0VfVVJMfSR7ZW5kcG9pbnR9YCwgQVBJX09QVElPTlMpO1xuICAgICAgXG4gICAgICBpZiAoIXJlc3BvbnNlLm9rKSB7XG4gICAgICAgIC8vIEhhbmRsZSA0MDQgZXJyb3JzIGdyYWNlZnVsbHkgZm9yIHZpZGVvIGVuZHBvaW50c1xuICAgICAgICBpZiAocmVzcG9uc2Uuc3RhdHVzID09PSA0MDQgJiYgZW5kcG9pbnQuaW5jbHVkZXMoJy92aWRlb3MnKSkge1xuICAgICAgICAgIGNvbnNvbGUud2FybihgVmlkZW9zIG5vdCBmb3VuZCBmb3IgZW5kcG9pbnQ6ICR7ZW5kcG9pbnR9YCk7XG4gICAgICAgICAgcmV0dXJuIHsgcmVzdWx0czogW10gfSBhcyBUO1xuICAgICAgICB9XG4gICAgICAgIC8vIEhhbmRsZSA0MDQgZXJyb3JzIGdyYWNlZnVsbHkgZm9yIGRldGFpbHMgYW5kIGNyZWRpdHMgZW5kcG9pbnRzXG4gICAgICAgIGlmIChyZXNwb25zZS5zdGF0dXMgPT09IDQwNCAmJiAoZW5kcG9pbnQuaW5jbHVkZXMoJy9tb3ZpZS8nKSB8fCBlbmRwb2ludC5pbmNsdWRlcygnL3R2LycpKSkge1xuICAgICAgICAgIGNvbnNvbGUud2FybihgQ29udGVudCBub3QgZm91bmQgZm9yIGVuZHBvaW50OiAke2VuZHBvaW50fWApO1xuICAgICAgICAgIHJldHVybiBudWxsIGFzIFQ7XG4gICAgICAgIH1cbiAgICAgICAgdGhyb3cgbmV3IEVycm9yKGBIVFRQIGVycm9yISBzdGF0dXM6ICR7cmVzcG9uc2Uuc3RhdHVzfWApO1xuICAgICAgfVxuICAgICAgXG4gICAgICBjb25zdCBkYXRhID0gYXdhaXQgcmVzcG9uc2UuanNvbigpO1xuICAgICAgXG4gICAgICBpZiAodXNlQ2FjaGUpIHtcbiAgICAgICAgdGhpcy5jYWNoZS5zZXQoY2FjaGVLZXksIHsgZGF0YSwgdGltZXN0YW1wOiBEYXRlLm5vdygpIH0pO1xuICAgICAgfVxuICAgICAgXG4gICAgICByZXR1cm4gZGF0YTtcbiAgICB9IGNhdGNoIChlcnJvcikge1xuICAgICAgY29uc29sZS5lcnJvcihgQVBJIEVycm9yIGZvciAke2VuZHBvaW50fTpgLCBlcnJvcik7XG4gICAgICBcbiAgICAgIC8vIEhhbmRsZSB2aWRlbyBlbmRwb2ludHMgc3BlY2lmaWNhbGx5XG4gICAgICBpZiAoZW5kcG9pbnQuaW5jbHVkZXMoJy92aWRlb3MnKSkge1xuICAgICAgICBjb25zb2xlLndhcm4oYFJldHVybmluZyBlbXB0eSB2aWRlb3MgZm9yICR7ZW5kcG9pbnR9YCk7XG4gICAgICAgIHJldHVybiB7IHJlc3VsdHM6IFtdIH0gYXMgVDtcbiAgICAgIH1cbiAgICAgIFxuICAgICAgLy8gUmV0dXJuIGNhY2hlZCBkYXRhIGlmIGF2YWlsYWJsZSwgZXZlbiBpZiBleHBpcmVkXG4gICAgICBpZiAodGhpcy5jYWNoZS5oYXMoY2FjaGVLZXkpKSB7XG4gICAgICAgIGNvbnNvbGUud2FybihgVXNpbmcgZXhwaXJlZCBjYWNoZSBmb3IgJHtlbmRwb2ludH1gKTtcbiAgICAgICAgcmV0dXJuIHRoaXMuY2FjaGUuZ2V0KGNhY2hlS2V5KSEuZGF0YTtcbiAgICAgIH1cbiAgICAgIFxuICAgICAgdGhyb3cgZXJyb3I7XG4gICAgfVxuICB9XG5cbiAgcHJpdmF0ZSBnZXRDYWNoZUR1cmF0aW9uKGVuZHBvaW50OiBzdHJpbmcpOiBudW1iZXIge1xuICAgIC8vIFVzZSBzaG9ydGVyIGNhY2hlIGZvciB0cmVuZGluZywgcG9wdWxhciwgYW5kIGN1cnJlbnQgY29udGVudFxuICAgIGlmIChlbmRwb2ludC5pbmNsdWRlcygnL3RyZW5kaW5nJykgfHwgXG4gICAgICAgIGVuZHBvaW50LmluY2x1ZGVzKCcvbm93X3BsYXlpbmcnKSB8fCBcbiAgICAgICAgZW5kcG9pbnQuaW5jbHVkZXMoJy9haXJpbmdfdG9kYXknKSB8fCBcbiAgICAgICAgZW5kcG9pbnQuaW5jbHVkZXMoJy9vbl90aGVfYWlyJykgfHxcbiAgICAgICAgZW5kcG9pbnQuaW5jbHVkZXMoJy9wb3B1bGFyJykpIHtcbiAgICAgIHJldHVybiB0aGlzLkZSRVNIX0NBQ0hFX0RVUkFUSU9OO1xuICAgIH1cbiAgICByZXR1cm4gdGhpcy5DQUNIRV9EVVJBVElPTjtcbiAgfVxuXG4gIGNsZWFyQ2FjaGUoKTogdm9pZCB7XG4gICAgdGhpcy5jYWNoZS5jbGVhcigpO1xuICAgIFxuICAgIC8vIEFsc28gY2xlYXIgbG9jYWxTdG9yYWdlIGNhY2hlc1xuICAgIGNvbnN0IGtleXMgPSBPYmplY3Qua2V5cyhsb2NhbFN0b3JhZ2UpO1xuICAgIGtleXMuZm9yRWFjaChrZXkgPT4ge1xuICAgICAgaWYgKGtleS5zdGFydHNXaXRoKCdmcmVzaF8nKSB8fCBcbiAgICAgICAgICBrZXkuaW5jbHVkZXMoJ3RyZW5kaW5nJykgfHwgXG4gICAgICAgICAga2V5LmluY2x1ZGVzKCdwb3B1bGFyJykgfHwgXG4gICAgICAgICAga2V5LmluY2x1ZGVzKCdub3dfcGxheWluZycpIHx8IFxuICAgICAgICAgIGtleS5pbmNsdWRlcygnYWlyaW5nJykpIHtcbiAgICAgICAgbG9jYWxTdG9yYWdlLnJlbW92ZUl0ZW0oa2V5KTtcbiAgICAgIH1cbiAgICB9KTtcbiAgfVxuXG4gIGdldENhY2hlU2l6ZSgpOiBudW1iZXIge1xuICAgIHJldHVybiB0aGlzLmNhY2hlLnNpemU7XG4gIH1cblxuICBnZXRDYWNoZUluZm8oKTogeyBrZXk6IHN0cmluZzsgYWdlOiBudW1iZXIgfVtdIHtcbiAgICBjb25zdCBub3cgPSBEYXRlLm5vdygpO1xuICAgIHJldHVybiBBcnJheS5mcm9tKHRoaXMuY2FjaGUuZW50cmllcygpKS5tYXAoKFtrZXksIHsgdGltZXN0YW1wIH1dKSA9PiAoe1xuICAgICAga2V5LFxuICAgICAgYWdlOiBub3cgLSB0aW1lc3RhbXBcbiAgICB9KSk7XG4gIH1cbn1cblxuZXhwb3J0IGNvbnN0IGFwaVNlcnZpY2UgPSBuZXcgQVBJU2VydmljZSgpOyJdLCJtYXBwaW5ncyI6IkFBQ0EsU0FBUyxVQUFVLG1CQUFtQjtBQUUvQixhQUFNLFdBQVc7QUFBQSxFQUNkLFFBQVEsb0JBQUksSUFBOEM7QUFBQSxFQUNqRCxpQkFBaUIsS0FBSyxLQUFLO0FBQUE7QUFBQSxFQUMzQix1QkFBdUIsS0FBSyxLQUFLO0FBQUE7QUFBQSxFQUVsRCxNQUFNLGVBQWtCLFVBQWtCLFdBQW9CLE1BQWtCO0FBQzlFLFVBQU0sV0FBVztBQUNqQixVQUFNLGdCQUFnQixLQUFLLGlCQUFpQixRQUFRO0FBRXBELFFBQUksWUFBWSxLQUFLLE1BQU0sSUFBSSxRQUFRLEdBQUc7QUFDeEMsWUFBTSxTQUFTLEtBQUssTUFBTSxJQUFJLFFBQVE7QUFDdEMsWUFBTSxZQUFZLEtBQUssSUFBSSxJQUFJLE9BQU8sWUFBWTtBQUVsRCxVQUFJLENBQUMsV0FBVztBQUNkLGVBQU8sT0FBTztBQUFBLE1BQ2hCO0FBQUEsSUFDRjtBQUVBLFFBQUk7QUFDRixZQUFNLFdBQVcsTUFBTSxNQUFNLEdBQUcsUUFBUSxHQUFHLFFBQVEsSUFBSSxXQUFXO0FBRWxFLFVBQUksQ0FBQyxTQUFTLElBQUk7QUFFaEIsWUFBSSxTQUFTLFdBQVcsT0FBTyxTQUFTLFNBQVMsU0FBUyxHQUFHO0FBQzNELGtCQUFRLEtBQUssa0NBQWtDLFFBQVEsRUFBRTtBQUN6RCxpQkFBTyxFQUFFLFNBQVMsQ0FBQyxFQUFFO0FBQUEsUUFDdkI7QUFFQSxZQUFJLFNBQVMsV0FBVyxRQUFRLFNBQVMsU0FBUyxTQUFTLEtBQUssU0FBUyxTQUFTLE1BQU0sSUFBSTtBQUMxRixrQkFBUSxLQUFLLG1DQUFtQyxRQUFRLEVBQUU7QUFDMUQsaUJBQU87QUFBQSxRQUNUO0FBQ0EsY0FBTSxJQUFJLE1BQU0sdUJBQXVCLFNBQVMsTUFBTSxFQUFFO0FBQUEsTUFDMUQ7QUFFQSxZQUFNLE9BQU8sTUFBTSxTQUFTLEtBQUs7QUFFakMsVUFBSSxVQUFVO0FBQ1osYUFBSyxNQUFNLElBQUksVUFBVSxFQUFFLE1BQU0sV0FBVyxLQUFLLElBQUksRUFBRSxDQUFDO0FBQUEsTUFDMUQ7QUFFQSxhQUFPO0FBQUEsSUFDVCxTQUFTLE9BQU87QUFDZCxjQUFRLE1BQU0saUJBQWlCLFFBQVEsS0FBSyxLQUFLO0FBR2pELFVBQUksU0FBUyxTQUFTLFNBQVMsR0FBRztBQUNoQyxnQkFBUSxLQUFLLDhCQUE4QixRQUFRLEVBQUU7QUFDckQsZUFBTyxFQUFFLFNBQVMsQ0FBQyxFQUFFO0FBQUEsTUFDdkI7QUFHQSxVQUFJLEtBQUssTUFBTSxJQUFJLFFBQVEsR0FBRztBQUM1QixnQkFBUSxLQUFLLDJCQUEyQixRQUFRLEVBQUU7QUFDbEQsZUFBTyxLQUFLLE1BQU0sSUFBSSxRQUFRLEVBQUc7QUFBQSxNQUNuQztBQUVBLFlBQU07QUFBQSxJQUNSO0FBQUEsRUFDRjtBQUFBLEVBRVEsaUJBQWlCLFVBQTBCO0FBRWpELFFBQUksU0FBUyxTQUFTLFdBQVcsS0FDN0IsU0FBUyxTQUFTLGNBQWMsS0FDaEMsU0FBUyxTQUFTLGVBQWUsS0FDakMsU0FBUyxTQUFTLGFBQWEsS0FDL0IsU0FBUyxTQUFTLFVBQVUsR0FBRztBQUNqQyxhQUFPLEtBQUs7QUFBQSxJQUNkO0FBQ0EsV0FBTyxLQUFLO0FBQUEsRUFDZDtBQUFBLEVBRUEsYUFBbUI7QUFDakIsU0FBSyxNQUFNLE1BQU07QUFHakIsVUFBTSxPQUFPLE9BQU8sS0FBSyxZQUFZO0FBQ3JDLFNBQUssUUFBUSxTQUFPO0FBQ2xCLFVBQUksSUFBSSxXQUFXLFFBQVEsS0FDdkIsSUFBSSxTQUFTLFVBQVUsS0FDdkIsSUFBSSxTQUFTLFNBQVMsS0FDdEIsSUFBSSxTQUFTLGFBQWEsS0FDMUIsSUFBSSxTQUFTLFFBQVEsR0FBRztBQUMxQixxQkFBYSxXQUFXLEdBQUc7QUFBQSxNQUM3QjtBQUFBLElBQ0YsQ0FBQztBQUFBLEVBQ0g7QUFBQSxFQUVBLGVBQXVCO0FBQ3JCLFdBQU8sS0FBSyxNQUFNO0FBQUEsRUFDcEI7QUFBQSxFQUVBLGVBQStDO0FBQzdDLFVBQU0sTUFBTSxLQUFLLElBQUk7QUFDckIsV0FBTyxNQUFNLEtBQUssS0FBSyxNQUFNLFFBQVEsQ0FBQyxFQUFFLElBQUksQ0FBQyxDQUFDLEtBQUssRUFBRSxVQUFVLENBQUMsT0FBTztBQUFBLE1BQ3JFO0FBQUEsTUFDQSxLQUFLLE1BQU07QUFBQSxJQUNiLEVBQUU7QUFBQSxFQUNKO0FBQ0Y7QUFFTyxhQUFNLGFBQWEsSUFBSSxXQUFXOyIsIm5hbWVzIjpbXX0=
