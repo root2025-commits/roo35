@@ -1,59 +1,93 @@
-# TV a la Carta - Sistema de Gestión
+<div align="center">
+  <img src="https://f005.backblazeb2.com/file/120000/Yero+Shop/lovepik.png" height="300" width="300" alt="logo"/>
 
-## Descripción
-Sistema completo de gestión para TV a la Carta con panel de administración, carrito de compras y sincronización en tiempo real.
+# <span class="yero-shop-text-hero">Yero Shop!</span>
 
-## Versión
-2.1.0
+## La plataforma de comercio detrás de todo
 
-## Última Exportación
-2025-10-23T13:19:41.140Z
+### An Ecommerce website 
 
-## Configuración Actual
+  <hr />
 
-### Precios
-- Películas: $80 CUP
-- Series: $300 CUP por temporada
-- Recargo transferencia: 10%
-- Novelas: $5 CUP por capítulo
+</div>
 
-### Zonas de Entrega
-Total configuradas: 28
+## **Enlace en vivo :**
 
-### Novelas Administradas
-Total: 35
+[<span class="yero-shop-text">Yero Shop!</span>](https://yeroshop.vercel.app/)
 
-## Características
-- ✅ Panel de administración completo
-- ✅ Sincronización en tiempo real
-- ✅ Gestión de precios dinámicos
-- ✅ Zonas de entrega personalizables
-- ✅ Catálogo de novelas administrable
-- ✅ Sistema de notificaciones
-- ✅ Exportación/Importación de configuración
-- ✅ Optimización de rendimiento
-- ✅ Carrito de compras avanzado
-- ✅ Integración con WhatsApp
+## **DEMO**
 
-## Instalación
-```bash
-npm install
-npm run dev
-```
+<a href="https://yeroshop.vercel.app/>
+    <p><span class="yero-shop-text">Yero Shop!</span> App 📱 - Watch Video</p>
+    <img style="max-width:300px;" src="">
+  </a>
 
-## Uso del Panel de Administración
-1. Acceder a /admin
-2. Usuario: admin
-3. Contraseña: tvalacarta2024
+## **Features -**
 
-## Tecnologías
-- React 18
-- TypeScript
-- Tailwind CSS
-- Vite
-- React Router
-- Lucide Icons
-- JSZip
+▶ Features:
 
-## Contacto
-WhatsApp: +5354690878
+1. Error Page 💀
+1. Easter Egg on the footer of the app (Includes Music) 😉
+1. Authentication:
+   1. User Signup
+   1. User Login
+1. Home page
+1. Product listing page
+1. Pagination on Product listing page
+1. Filter and sort products functionalities with Shimmer UI (Debounced)
+1. Highly Optimized Search product functionality with Suggestions (Debounced). 
+    1. These Suggestions are LRU Cached and older cached responses are deleted once reached the cache limit (50 responses). 
+    1. Also clicking the 🔍 button or pressing the Enter key, the Search even handles the "filter by product name" in product listing page.
+1. Individual product page
+1. 🛒 Cart Managment with selection of colors for a product. 
+1. ❤ Wishlist managment with selection of colors for a product.
+1. Address management (with 'No two addresses can be edited at once')
+1. Coupon Code Management
+1. Checkout page
+1. 💲 Payment Gateway Integration 
+1. Fully Responsive
+
+## **Built with -**
+
+- React JS
+- React Context API + useReducer
+- React Router v6
+- CSS Modules
+- Mockbee as mockbackend
+- React Icons
+- Razorpay payment gateway
+
+## **Screenshots :**
+
+### Error Page
+![image]()
+
+### Home Page
+![<span class="yero-shop-text">Yero Shop!</span>-home](https://f005.backblazeb2.com/file/120000/Yero+Shop/Yero+Shop!-home.png)
+
+### Product Listing Page (DESKTOP)
+![image](https://f005.backblazeb2.com/file/120000/Yero+Shop/Product+Listing+Page+(DESKTOP).png)
+
+### Product Listing Page (MOBILE)
+![image](https://f005.backblazeb2.com/file/120000/Yero+Shop/MOBILE.png)
+
+### Cart Page
+![image](https://f005.backblazeb2.com/file/120000/Yero+Shop/Cart_Page.png)
+
+### Wishlist Page
+![image](https://f005.backblazeb2.com/file/120000/Yero+Shop/Wishlist+Page.png)
+
+### Profile Page
+![image](https://f005.backblazeb2.com/file/120000/Yero+Shop/Profile+Page.png)
+
+### Address Page
+![image](https://f005.backblazeb2.com/file/120000/Yero+Shop/Address+Page.png)
+
+### Checkout Page
+![image](https://f005.backblazeb2.com/file/120000/Yero+Shop/Checkout+Page.png)
+
+### Login Page
+![image](https://f005.backblazeb2.com/file/120000/Yero+Shop/Login+Page.png)
+
+### Signup Page
+![image](https://f005.backblazeb2.com/file/120000/Yero+Shop/Signup+Page.png)
