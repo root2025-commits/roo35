@@ -68,37 +68,11 @@ const ProductsContextProvider = ({ children }) => {
 
   const fetchAllProductsAndCategories = async () => {
     dispatch({ type: PRODUCTS_ACTION.GET_ALL_PRODUCTS_BEGIN });
+    // as the response was quick, used wait (check utils) to show Loader for 1000s
     await wait(DELAY_TO_SHOW_LOADER);
 
     try {
-      // Primero intentar cargar desde la configuración guardada
-      const savedConfig = localStorage.getItem('adminStoreConfig');
-      let products = [];
-      let categories = [];
-
-      if (savedConfig) {
-        try {
-          const parsedConfig = JSON.parse(savedConfig);
-          if (parsedConfig.products && parsedConfig.products.length > 0) {
-            products = parsedConfig.products;
-            console.log('📦 Productos cargados desde configuración del admin:', products.length);
-          }
-          if (parsedConfig.categories && parsedConfig.categories.length > 0) {
-            categories = parsedConfig.categories;
-            console.log('📂 Categorías cargadas desde configuración del admin:', categories.length);
-          }
-        } catch (error) {
-          console.error('Error al cargar configuración guardada:', error);
-        }
-      }
-
-      // Si no hay datos guardados, cargar desde el servicio
-      if (products.length === 0 || categories.length === 0) {
-        console.log('📡 Cargando datos desde el servicio...');
-        const serviceData = await getAllProductsCategoriesService();
-        if (products.length === 0) products = serviceData.products;
-        if (categories.length === 0) categories = serviceData.categories;
-      }
+      const { products, categories } = await getAllProductsCategoriesService();
 
       dispatch({
         type: PRODUCTS_ACTION.GET_ALL_PRODUCTS_FULFILLED,
@@ -106,144 +80,9 @@ const ProductsContextProvider = ({ children }) => {
       });
     } catch (error) {
       dispatch({ type: PRODUCTS_ACTION.GET_ALL_PRODUCTS_REJECTED });
+
       console.error(error);
     }
-  };
-
-  // FUNCIÓN MEJORADA PARA SINCRONIZACIÓN COMPLETA E INMEDIATA DE PRODUCTOS
-  const updateProductsFromAdmin = (newProducts) => {
-    console.log('🔄 Iniciando sincronización completa de productos...');
-    
-    // 1. Actualizar en el reducer inmediatamente
-    dispatch({
-      type: PRODUCTS_ACTION.UPDATE_PRODUCTS_FROM_ADMIN,
-      payload: { products: newProducts },
-    });
-
-    // 2. Guardar en localStorage para persistencia con verificación
-    const savedConfig = localStorage.getItem('adminStoreConfig') || '{}';
-    let config = {};
-    
-    try {
-      config = JSON.parse(savedConfig);
-    } catch (error) {
-      console.error('Error al cargar configuración:', error);
-      config = {};
-    }
-
-    config.products = newProducts;
-    config.lastModified = new Date().toISOString();
-    localStorage.setItem('adminStoreConfig', JSON.stringify(config));
-    
-    // Verificar que se guardó correctamente
-    const verifyConfig = localStorage.getItem('adminStoreConfig');
-    if (verifyConfig) {
-      try {
-        const parsedVerify = JSON.parse(verifyConfig);
-        if (parsedVerify.products && parsedVerify.products.length === newProducts.length) {
-          console.log('✅ Productos guardados correctamente en localStorage');
-        }
-      } catch (error) {
-        console.error('Error en verificación de guardado de productos:', error);
-      }
-    }
-    
-    // 3. Disparar eventos de sincronización inmediata
-    setTimeout(() => {
-      window.dispatchEvent(new CustomEvent('productsUpdated', { 
-        detail: { products: newProducts } 
-      }));
-      
-      window.dispatchEvent(new CustomEvent('productsConfigUpdated', { 
-        detail: { products: newProducts } 
-      }));
-      
-      window.dispatchEvent(new CustomEvent('forceStoreUpdate'));
-      
-      window.dispatchEvent(new CustomEvent('adminConfigChanged', { 
-        detail: { products: newProducts, type: 'products' } 
-      }));
-      
-      dispatch({
-        type: PRODUCTS_ACTION.FORCE_UPDATE_PRODUCTS,
-        payload: { products: newProducts },
-      });
-      
-      // Sincronizar con otros componentes del admin panel
-      window.dispatchEvent(new CustomEvent('adminPanelSync', { 
-        detail: { type: 'products', data: newProducts } 
-      }));
-    }, 10);
-
-    console.log('✅ Sincronización de productos completada');
-  };
-
-  // FUNCIÓN MEJORADA PARA SINCRONIZACIÓN COMPLETA E INMEDIATA DE CATEGORÍAS
-  const updateCategoriesFromAdmin = (newCategories) => {
-    console.log('🔄 Iniciando sincronización completa de categorías...');
-    
-    // 1. Actualizar en el reducer inmediatamente
-    dispatch({
-      type: PRODUCTS_ACTION.UPDATE_CATEGORIES_FROM_ADMIN,
-      payload: { categories: newCategories },
-    });
-
-    // 2. Guardar en localStorage para persistencia con verificación
-    const savedConfig = localStorage.getItem('adminStoreConfig') || '{}';
-    let config = {};
-    
-    try {
-      config = JSON.parse(savedConfig);
-    } catch (error) {
-      console.error('Error al cargar configuración:', error);
-      config = {};
-    }
-
-    config.categories = newCategories;
-    config.lastModified = new Date().toISOString();
-    localStorage.setItem('adminStoreConfig', JSON.stringify(config));
-    
-    // Verificar que se guardó correctamente
-    const verifyConfig = localStorage.getItem('adminStoreConfig');
-    if (verifyConfig) {
-      try {
-        const parsedVerify = JSON.parse(verifyConfig);
-        if (parsedVerify.categories && parsedVerify.categories.length === newCategories.length) {
-          console.log('✅ Categorías guardadas correctamente en localStorage');
-        }
-      } catch (error) {
-        console.error('Error en verificación de guardado de categorías:', error);
-      }
-    }
-    
-    // 3. Disparar eventos de sincronización inmediata
-    setTimeout(() => {
-      window.dispatchEvent(new CustomEvent('categoriesUpdated', { 
-        detail: { categories: newCategories } 
-      }));
-      
-      window.dispatchEvent(new CustomEvent('categoriesConfigUpdated', { 
-        detail: { categories: newCategories } 
-      }));
-      
-      window.dispatchEvent(new CustomEvent('forceStoreUpdate'));
-      
-      window.dispatchEvent(new CustomEvent('adminConfigChanged', { 
-        detail: { categories: newCategories, type: 'categories' } 
-      }));
-      
-      dispatch({
-        type: PRODUCTS_ACTION.FORCE_UPDATE_CATEGORIES,
-        payload: { categories: newCategories },
-      });
-      
-      // Sincronizar con otros componentes del admin panel
-      window.dispatchEvent(new CustomEvent('adminPanelSync', { 
-        detail: { type: 'categories', data: newCategories } 
-      }));
-    }, 10);
-
-    console.log('✅ Sincronización de categorías completada');
   };
 
   // useEffects
@@ -258,93 +97,12 @@ const ProductsContextProvider = ({ children }) => {
     updateWishlist(user.wishlist);
   }, [user]);
 
-  // ESCUCHAR EVENTOS DE ACTUALIZACIÓN MEJORADOS CON VERIFICACIÓN
-  useEffect(() => {
-    const handleProductsUpdate = (event) => {
-      const { products: updatedProducts } = event.detail;
-      console.log('📡 Evento de actualización de productos recibido en ProductsContext');
-      
-      dispatch({
-        type: PRODUCTS_ACTION.UPDATE_PRODUCTS_FROM_ADMIN,
-        payload: { products: updatedProducts },
-      });
-    };
-
-    const handleCategoriesUpdate = (event) => {
-      const { categories: updatedCategories } = event.detail;
-      console.log('📡 Evento de actualización de categorías recibido en ProductsContext');
-      
-      dispatch({
-        type: PRODUCTS_ACTION.UPDATE_CATEGORIES_FROM_ADMIN,
-        payload: { categories: updatedCategories },
-      });
-    };
-
-    const handleForceUpdate = () => {
-      console.log('🔄 Forzando actualización completa en ProductsContext...');
-      
-      const savedConfig = localStorage.getItem('adminStoreConfig');
-      if (savedConfig) {
-        try {
-          const parsedConfig = JSON.parse(savedConfig);
-          if (parsedConfig.products) {
-            dispatch({
-              type: PRODUCTS_ACTION.UPDATE_PRODUCTS_FROM_ADMIN,
-              payload: { products: parsedConfig.products },
-            });
-          }
-          if (parsedConfig.categories) {
-            dispatch({
-              type: PRODUCTS_ACTION.UPDATE_CATEGORIES_FROM_ADMIN,
-              payload: { categories: parsedConfig.categories },
-            });
-          }
-        } catch (error) {
-          console.error('Error al forzar actualización:', error);
-        }
-      }
-    };
-
-    const handleAdminConfigChange = (event) => {
-      const { type, products: updatedProducts, categories: updatedCategories } = event.detail;
-      console.log(`🔧 Cambio de configuración del admin detectado: ${type}`);
-      
-      if (type === 'products' && updatedProducts) {
-        dispatch({
-          type: PRODUCTS_ACTION.UPDATE_PRODUCTS_FROM_ADMIN,
-          payload: { products: updatedProducts },
-        });
-      }
-      
-      if (type === 'categories' && updatedCategories) {
-        dispatch({
-          type: PRODUCTS_ACTION.UPDATE_CATEGORIES_FROM_ADMIN,
-          payload: { categories: updatedCategories },
-        });
-      }
-    };
-
-    // Agregar listeners
-    window.addEventListener('productsUpdated', handleProductsUpdate);
-    window.addEventListener('categoriesUpdated', handleCategoriesUpdate);
-    window.addEventListener('forceStoreUpdate', handleForceUpdate);
-    window.addEventListener('adminConfigChanged', handleAdminConfigChange);
-
-    // Cleanup
-    return () => {
-      window.removeEventListener('productsUpdated', handleProductsUpdate);
-      window.removeEventListener('categoriesUpdated', handleCategoriesUpdate);
-      window.removeEventListener('forceStoreUpdate', handleForceUpdate);
-      window.removeEventListener('adminConfigChanged', handleAdminConfigChange);
-    };
-  }, []);
-
   // fns to get data from services and update state
   const addToCartDispatch = async (productToAdd) => {
     try {
       const cart = await postAddToCartService(productToAdd, tokenFromContext);
       updateCart(cart);
-      toastHandler(ToastType.Success, 'Agregado al carrito exitosamente');
+      toastHandler(ToastType.Success, 'Successfully Added To Cart');
     } catch (error) {
       console.log(error.response);
     }
@@ -359,7 +117,7 @@ const ProductsContextProvider = ({ children }) => {
 
       updateWishlist(wishlist);
 
-      toastHandler(ToastType.Success, 'Agregado a lista de deseos exitosamente');
+      toastHandler(ToastType.Success, 'Successfully Added To Wishlist');
     } catch (error) {
       console.log(error.response);
     }
@@ -370,7 +128,7 @@ const ProductsContextProvider = ({ children }) => {
       const cart = await deleteFromCartService(productId, tokenFromContext);
 
       updateCart(cart);
-      toastHandler(ToastType.Warn, 'Removido del carrito exitosamente');
+      toastHandler(ToastType.Warn, 'Removed From Cart successfully');
     } catch (error) {
       console.log(error.response);
     }
@@ -384,7 +142,7 @@ const ProductsContextProvider = ({ children }) => {
       );
 
       updateWishlist(wishlist);
-      toastHandler(ToastType.Warn, 'Removido de lista de deseos exitosamente');
+      toastHandler(ToastType.Warn, 'Removed From Wishlist successfully');
     } catch (error) {
       console.log(error.response);
     }
@@ -426,7 +184,7 @@ const ProductsContextProvider = ({ children }) => {
 
       updateCart(cart);
       updateWishlist(wishlist);
-      toastHandler(ToastType.Success, 'Movido a lista de deseos exitosamente');
+      toastHandler(ToastType.Success, 'Moved to Wishlist successfully');
     } catch (error) {
       console.log(error.response);
     }
@@ -442,7 +200,7 @@ const ProductsContextProvider = ({ children }) => {
 
       updateCart(cart);
       updateWishlist(wishlist);
-      toastHandler(ToastType.Success, 'Movido al carrito exitosamente');
+      toastHandler(ToastType.Success, 'Moved to Cart successfully');
     } catch (error) {
       console.log(error.response);
     }
@@ -466,7 +224,7 @@ const ProductsContextProvider = ({ children }) => {
   // address
 
   const addAddressDispatch = (addressObj) => {
-    toastHandler(ToastType.Success, 'Dirección agregada exitosamente');
+    toastHandler(ToastType.Success, 'Added Address Successfully');
     dispatch({
       type: PRODUCTS_ACTION.ADD_ADDRESS,
       payload: {
@@ -476,7 +234,7 @@ const ProductsContextProvider = ({ children }) => {
   };
 
   const editAddressDispatch = (addressObj) => {
-    toastHandler(ToastType.Success, 'Dirección actualizada exitosamente');
+    toastHandler(ToastType.Success, 'Updated Address Successfully');
     dispatch({
       type: PRODUCTS_ACTION.EDIT_ADDRESS,
       payload: {
@@ -486,7 +244,7 @@ const ProductsContextProvider = ({ children }) => {
   };
 
   const deleteAddressDispatch = (addressId) => {
-    toastHandler(ToastType.Success, 'Dirección eliminada exitosamente');
+    toastHandler(ToastType.Success, 'Deleted Address Successfully');
     dispatch({
       type: PRODUCTS_ACTION.DELETE_ADDRESS,
       payloadId: addressId,
@@ -495,7 +253,7 @@ const ProductsContextProvider = ({ children }) => {
 
   const deleteAllAddressDispatch = async () => {
     await timedMainPageLoader();
-    toastHandler(ToastType.Success, 'Todas las direcciones eliminadas exitosamente');
+    toastHandler(ToastType.Success, 'Deleted All Address Successfully');
     dispatch({
       type: PRODUCTS_ACTION.DELETE_ALL_ADDRESS,
     });
@@ -506,6 +264,15 @@ const ProductsContextProvider = ({ children }) => {
       type: PRODUCTS_ACTION.DELETE_ALL_ADDRESS,
     });
   };
+
+  // const addOrderDispatch = async (orderObj) => {
+  //   dispatch({
+  //     type: PRODUCTS_ACTION.ADD_ORDER,
+  //     payload: {
+  //       order: orderObj,
+  //     },
+  //   });
+  // };
 
   return (
     <ProductsContext.Provider
@@ -528,11 +295,10 @@ const ProductsContextProvider = ({ children }) => {
         editAddressDispatch,
         deleteAddressDispatch,
         deleteAllAddressDispatch,
+        // addOrderDispatch,
         clearCartInContext,
         clearWishlistInContext,
         clearAddressInContext,
-        updateProductsFromAdmin,
-        updateCategoriesFromAdmin,
       }}
     >
       {children}

@@ -80,7 +80,7 @@ const SingleProductPage = () => {
   }
 
   if (isSinglePageError) {
-    return <Error errorText='Error: Producto No Encontrado' />;
+    return <Error errorText='Error: Product Not Found' />;
   }
 
   const {
@@ -97,12 +97,7 @@ const SingleProductPage = () => {
     stock,
     reviewCount,
     stars,
-    paymentType,
-    transferFeePercentage,
   } = singleProductData;
-  
-  // Calcular precio con transferencia para mostrar información completa
-  const transferPrice = price * (1 + transferFeePercentage / 100);
 
   const discountPercent = calculateDiscountPercent(price, originalPrice);
   const inStock = stock > 0;
@@ -173,7 +168,7 @@ const SingleProductPage = () => {
           <span className={styles.rating}>
             {stars} <AiFillStar />
           </span>
-          <p>({reviewCount} reseñas de clientes)</p>
+          <p>({reviewCount} customer reviews)</p>
         </div>
 
         <div className={styles.price}>
@@ -181,7 +176,7 @@ const SingleProductPage = () => {
           {discountPercent > 0 && (
             <>
               <Price amount={originalPrice} />
-              <span className={styles.discount}> ({discountPercent}% desc.)</span>
+              <span className={styles.discount}> ({discountPercent}% off)</span>
             </>
           )}
         </div>
@@ -189,41 +184,27 @@ const SingleProductPage = () => {
         <p className={styles.desc}>{description}</p>
 
         <div className={styles.row}>
-          <span>Disponibilidad:</span>
-          <p>{inStock ? 'En Stock' : 'Agotado'}</p>
+          <span>Availability:</span>
+          <p>{inStock ? 'In Stock' : 'Out Of Stock'}</p>
         </div>
 
         <div className={styles.row}>
-          <span>Envío Disponible:</span>
-          <p>{isShippingAvailable ? 'Sí' : 'No'}</p>
+          <span>Shipping Available:</span>
+          <p>{isShippingAvailable ? 'Yes' : 'No'}</p>
         </div>
 
         <div className={styles.row}>
-          <span>Métodos de Pago:</span>
-          <div className={styles.paymentMethods}>
-            {(paymentType === 'cash' || paymentType === 'both') && (
-              <span className={styles.paymentCash}>💰 Efectivo: <Price amount={price} showCurrency={false} /></span>
-            )}
-            {(paymentType === 'transfer' || paymentType === 'both') && (
-              <span className={styles.paymentTransfer}>
-                💳 Transferencia: <Price amount={transferPrice} showCurrency={false} /> (+{transferFeePercentage || 5}%)
-              </span>
-            )}
-          </div>
-        </div>
-
-        <div className={styles.row}>
-          <span>Categoría:</span>
+          <span>Category:</span>
           <p>{category}</p>
         </div>
 
         <div className={styles.row}>
-          <span>Marca:</span>
+          <span>Company:</span>
           <p>{company}</p>
         </div>
 
         <div className={styles.row}>
-          <span>Color{colors.length > 1 && 'es'}:</span>
+          <span>Color{colors.length > 1 && 's'}:</span>
 
           <div
             className={
@@ -247,7 +228,7 @@ const SingleProductPage = () => {
         </div>
 
         <div className={styles.row}>
-          <span>Stock Disponible:</span>
+          <span>Available Stock:</span>
           <p>{activeColorObj.colorQuantity}</p>
         </div>
 
@@ -261,7 +242,7 @@ const SingleProductPage = () => {
             disabled={!inStock || isCartBtnDisable}
             onClick={handleCartBtnClick}
           >
-            {isSinglePageProductInCart ? 'Ir al Carrito' : 'Agregar al Carrito'}
+            {isSinglePageProductInCart ? 'Go to Cart' : 'Add To Cart'}
           </button>
 
           <button
@@ -272,8 +253,8 @@ const SingleProductPage = () => {
             disabled={!inStock || isWishlistBtnDisable}
           >
             {isSinglePageProductInWishlist
-              ? 'Ir a Lista de Deseos'
-              : 'Agregar a Lista de Deseos'}
+              ? 'Go to Wishlist'
+              : 'Add To Wishlist'}
           </button>
         </div>
       </div>

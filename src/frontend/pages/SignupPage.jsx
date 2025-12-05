@@ -6,8 +6,8 @@ import {
   Title,
 } from '../components';
 import { useFormInput, useNavigateIfRegistered } from '../hooks';
-import { setIntoLocalStorage, toastHandler } from '../utils/utils';
-import { ToastType, LOCAL_STORAGE_KEYS } from '../constants/constants';
+import { toastHandler } from '../utils/utils';
+import { ToastType } from '../constants/constants';
 import { useState } from 'react';
 import { signupService } from '../Services/services';
 import { useAuthContext } from '../contexts/AuthContextProvider';
@@ -32,44 +32,16 @@ const SignupPage = () => {
   const handleCreateAccount = async (e) => {
     e.preventDefault();
 
-    // Validaciones del formulario
-    if (!userInputs.firstName.trim()) {
-      toastHandler(ToastType.Error, 'Por favor ingresa tu nombre');
-      return;
-    }
-
-    if (!userInputs.lastName.trim()) {
-      toastHandler(ToastType.Error, 'Por favor ingresa tu apellido');
-      return;
-    }
-
-    if (!userInputs.email.trim()) {
-      toastHandler(ToastType.Error, 'Por favor ingresa tu email');
-      return;
-    }
-
-    // Validación de formato de email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(userInputs.email.trim())) {
-      toastHandler(ToastType.Error, 'Por favor ingresa un email válido');
-      return;
-    }
-
-    if (!userInputs.passwordMain.trim()) {
-      toastHandler(ToastType.Error, 'Por favor ingresa una contraseña');
-      return;
-    }
-
-    if (userInputs.passwordMain.length < 6) {
-      toastHandler(ToastType.Error, 'La contraseña debe tener al menos 6 caracteres');
-      return;
-    }
-
     if (userInputs.passwordMain !== userInputs.passwordConfirm) {
       toastHandler(
         ToastType.Error,
-        '¡Las contraseñas no coinciden!'
+        'Password and Confirm Password inputs did not match!'
       );
+      return;
+    }
+
+    if (!userInputs.firstName.trim()) {
+      toastHandler(ToastType.Error, 'Please fill all the inputs');
       return;
     }
 
@@ -88,26 +60,14 @@ const SignupPage = () => {
       // update AuthContext with data
       updateUserAuth({ user, token });
 
-      // store this data in localStorage
-      setIntoLocalStorage(LOCAL_STORAGE_KEYS.User, user);
-      setIntoLocalStorage(LOCAL_STORAGE_KEYS.Token, token);
-
       // show success toast
-      toastHandler(ToastType.Success, `¡Registro exitoso! Bienvenido ${firstName} 🎉`);
+      toastHandler(ToastType.Success, `Sign up successful`);
 
       // if user directly comes to '/signup' from url, so state will be null, after successful registration, user should be directed to home page
       navigate(signupPageLocation?.state?.from ?? '/');
     } catch (error) {
-      console.error('Error de registro:', error);
-      let errorText = 'Error al crear la cuenta. Intenta nuevamente.';
-      
-      if (error?.response?.data?.errors && error.response.data.errors.length > 0) {
-        errorText = error.response.data.errors[0];
-      } else if (error?.message) {
-        errorText = error.message;
-      }
-      
-      toastHandler(ToastType.Error, errorText);
+      toastHandler(ToastType.Error, error.response.data.errors[0]);
+      console.error(error.response);
     }
 
     setIsSignupFormLoading(false);
@@ -120,81 +80,77 @@ const SignupPage = () => {
 
   return (
     <LoginAndSignupLayout>
-      <Title>Registrarse</Title>
+      <Title>Signup</Title>
 
       <form onSubmit={handleCreateAccount}>
         <FormRow
-          text='Nombre'
+          text='First Name'
           type='text'
           name='firstName'
           id='firstName'
-          placeholder='Tu nombre'
+          placeholder='Jethalal'
           value={userInputs.firstName}
           handleChange={handleInputChange}
           disabled={isSignupFormLoading}
         />
         <FormRow
-          text='Apellido'
+          text='Last Name'
           type='text'
           name='lastName'
           id='lastName'
-          placeholder='Tu apellido'
+          placeholder='Gada'
           value={userInputs.lastName}
           handleChange={handleInputChange}
           disabled={isSignupFormLoading}
         />
 
         <FormRow
-          text='Correo Electrónico'
+          text='Email Address'
           type='email'
           name='email'
           id='email'
-          placeholder='tu-email@ejemplo.com'
+          placeholder='jethalal.gada@gmail.com'
           value={userInputs.email}
           handleChange={handleInputChange}
           disabled={isSignupFormLoading}
         />
 
         <PasswordRow
-          text='Contraseña (mínimo 6 caracteres)'
+          text='Enter Password'
           name='passwordMain'
           id='passwordMain'
-          placeholder='Tu contraseña'
+          placeholder='babitaji1234'
           value={userInputs.passwordMain}
           handleChange={handleInputChange}
           disabled={isSignupFormLoading}
         />
         <PasswordRow
-          text='Confirmar Contraseña'
+          text='Confirm Password'
           name='passwordConfirm'
           id='passwordConfirm'
-          placeholder='Confirma tu contraseña'
+          placeholder=''
           value={userInputs.passwordConfirm}
           handleChange={handleInputChange}
           disabled={isSignupFormLoading}
         />
 
-        <button 
-          className='btn btn-block' 
-          type='submit'
-          disabled={isSignupFormLoading}
-        >
+        <button className='btn btn-block' type='submit'>
           {isSignupFormLoading ? (
             <span className='loader-2'></span>
           ) : (
-            'Crear Nueva Cuenta'
+            'Create New Account'
           )}
         </button>
       </form>
 
       <div>
         <span>
-          ¿Ya estás registrado?{' '}
+          Already Registered ?{' '}
           <Link
             to='/login'
             state={{ from: signupPageLocation?.state?.from ?? '/' }}
           >
-            iniciar sesión
+            login
           </Link>
         </span>
       </div>

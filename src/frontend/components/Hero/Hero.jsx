@@ -1,6 +1,6 @@
 import styles from './Hero.module.css';
 
-import jethalalBanner from '../../assets/lovepik.png';
+import jethalalBanner from '../../assets/jethalalBanner.png';
 import { Link } from 'react-router-dom';
 import { useIsMobile } from '../../hooks';
 
@@ -11,14 +11,17 @@ const Hero = () => {
     <section className='white-bcg'>
       <div className={`container ${styles.hero}`}>
         <article className={styles.content}>
-          <h1>La plataforma de comercio detrás de todo</h1>
+          <h1>Experience Electronics Redefined: Unleash Innovation</h1>
 
           <p>
-            ¡Bienvenido a <span className="yero-shop-text-hero">Yero Shop!</span> Vende online y en persona. Vende a nivel local y mundial.
+            Discover the Future of Electronics: Unleash Innovation, Immerse in
+            Unparalleled Quality. Experience our cutting-edge technology and
+            elevate your everyday with Gada Electronics. Explore the
+            extraordinary today.
           </p>
 
           <Link to='/products' className={`btn ${styles.btnHero}`}>
-            Comprar ahora
+            Shop now
           </Link>
         </article>
 
@@ -26,7 +29,7 @@ const Hero = () => {
           <article className={styles.imageContainer}>
             <img
               src={jethalalBanner}
-              alt="jethalal"
+              alt='jethalal'
               className={styles.banner}
             />
           </article>

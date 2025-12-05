@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import styles from './Error.module.css';
-const errorImg = '/jethalal-error.png';
+import errorImg from '../../assets/jethalal-error.png';
 
 const Error = ({ errorText }) => {
   return (
@@ -13,7 +13,7 @@ const Error = ({ errorText }) => {
       </div>
 
       <Link to='/' className='btn btn-padding-desktop'>
-        Volver al Inicio
+        Go back to Home
       </Link>
     </div>
   );

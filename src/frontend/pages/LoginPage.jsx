@@ -7,7 +7,6 @@ import {
 } from '../components';
 import {
   TEST_USER,
-  SUPER_ADMIN,
   ToastType,
   LOCAL_STORAGE_KEYS,
   LOGIN_CLICK_TYPE,
@@ -31,52 +30,22 @@ const LoginPage = () => {
   };
   const [userInputs, setUserInputs] = useState(initialLoginState);
   const [activeBtnLoader, setActiveBtnLoader] = useState('');
-  const [showAdminFields, setShowAdminFields] = useState(false);
   const locationOfLogin = useLocation();
 
   const handleUserInput = (e) => {
     setUserInputs({ ...userInputs, [e.target.name]: e.target.value });
   };
 
-  // usado para todos los botones
+  // used for both the buttons
   const handleSubmit = async (e, clickType) => {
     e.preventDefault();
 
-    let userInfo;
-    
-    if (clickType === LOGIN_CLICK_TYPE.GuestClick) {
-      userInfo = TEST_USER;
-    } else if (clickType === LOGIN_CLICK_TYPE.AdminClick) {
-      // Para admin, verificar que los campos estén llenos
-      if (!userInputs.email.trim() || !userInputs.password.trim()) {
-        toastHandler(ToastType.Error, 'Por favor ingresa las credenciales de administrador');
-        return;
-      }
-      
-      // Verificar que sean las credenciales correctas del super admin
-      if (userInputs.email !== SUPER_ADMIN.email || userInputs.password !== SUPER_ADMIN.password) {
-        toastHandler(ToastType.Error, 'Credenciales de administrador incorrectas');
-        return;
-      }
-      
-      userInfo = userInputs;
-    } else {
-      userInfo = userInputs;
-      
-      // Validaciones básicas para login manual
-      if (!userInputs.email.trim()) {
-        toastHandler(ToastType.Error, 'Por favor ingresa tu email');
-        return;
-      }
-      if (!userInputs.password.trim()) {
-        toastHandler(ToastType.Error, 'Por favor ingresa tu contraseña');
-        return;
-      }
-    }
+    const isGuestClick = clickType === LOGIN_CLICK_TYPE.GuestClick;
+    const userInfo = isGuestClick ? TEST_USER : userInputs;
 
     setActiveBtnLoader(clickType);
 
-    if (clickType === LOGIN_CLICK_TYPE.GuestClick) {
+    if (isGuestClick) {
       setUserInputs(TEST_USER);
     }
 
@@ -91,33 +60,18 @@ const LoginPage = () => {
       setIntoLocalStorage(LOCAL_STORAGE_KEYS.Token, token);
 
       // show success toast
-      const welcomeMessage = user.email === SUPER_ADMIN.email 
-        ? '¡Bienvenido Super Administrador! 👑'
-        : `¡Bienvenido ${user.firstName} ${user.lastName}! 😎`;
-      
-      toastHandler(ToastType.Success, welcomeMessage);
-      
+      toastHandler(
+        ToastType.Success,
+        `Welcome ${user.firstName} ${user.lastName} 😎`
+      );
       // if non-registered user comes from typing '/login' at the url, after success redirect it to '/'
       navigate(locationOfLogin?.state?.from ?? '/');
-    } catch (error) {
-      console.error('Error de login:', error);
-      let errorText = 'Error al iniciar sesión. Intenta nuevamente.';
-      
-      if (error?.response?.data?.errors && error.response.data.errors.length > 0) {
-        errorText = error.response.data.errors[0];
-      } else if (error?.message) {
-        errorText = error.message;
-      }
-      
+    } catch ({ response }) {
+      const errorText = response?.data?.errors[0].split('.')[0];
       toastHandler(ToastType.Error, errorText);
     }
 
     setActiveBtnLoader('');
-  };
-
-  const handleAdminAccess = () => {
-    setShowAdminFields(true);
-    setUserInputs({ email: '', password: '' }); // Limpiar campos
   };
 
   //  if user is registered and trying to login through url, show this and navigate to home using useNavigateIfRegistered().
@@ -127,24 +81,24 @@ const LoginPage = () => {
 
   return (
     <LoginAndSignupLayout>
-      <Title>Iniciar Sesión</Title>
+      <Title>Login</Title>
 
       <form onSubmit={(e) => handleSubmit(e, LOGIN_CLICK_TYPE.RegisterClick)}>
         <FormRow
-          text='Correo Electrónico'
+          text='Email Address'
           type='email'
           name='email'
           id='email'
-          placeholder='tu-email@ejemplo.com'
+          placeholder='jethalal.gada@gmail.com'
           value={userInputs.email}
           handleChange={handleUserInput}
           disabled={!!activeBtnLoader}
         />
         <PasswordRow
-          text='Ingresa tu Contraseña'
+          text='Enter Password'
           name='password'
           id='password'
-          placeholder='Tu contraseña'
+          placeholder='babitaji1234'
           value={userInputs.password}
           handleChange={handleUserInput}
           disabled={!!activeBtnLoader}
@@ -158,58 +112,46 @@ const LoginPage = () => {
           {activeBtnLoader === LOGIN_CLICK_TYPE.RegisterClick ? (
             <span className='loader-2'></span>
           ) : (
-            'Iniciar Sesión'
+            'Login'
           )}
         </button>
 
-        {/* Guest Login button */}
+        {/* this Guest Login button is out of the form  */}
         <button
           disabled={!!activeBtnLoader}
           className='btn btn-block'
-          type='button'
           onClick={(e) => handleSubmit(e, LOGIN_CLICK_TYPE.GuestClick)}
         >
           {activeBtnLoader === LOGIN_CLICK_TYPE.GuestClick ? (
             <span className='loader-2'></span>
           ) : (
-            'Iniciar como Invitado'
+            'Login as a guest'
           )}
         </button>
-
-        {/* Admin Access button - Solo muestra el botón inicial */}
-        {!showAdminFields ? (
-          <button
-            disabled={!!activeBtnLoader}
-            className='btn btn-block btn-danger'
-            type='button'
-            onClick={handleAdminAccess}
-          >
-            👑 Acceso Administrador
-          </button>
-        ) : (
-          <button
-            disabled={!!activeBtnLoader}
-            className='btn btn-block btn-danger'
-            type='button'
-            onClick={(e) => handleSubmit(e, LOGIN_CLICK_TYPE.AdminClick)}
-          >
-            {activeBtnLoader === LOGIN_CLICK_TYPE.AdminClick ? (
-              <span className='loader-2'></span>
-            ) : (
-              '🔐 Iniciar Sesión como Administrador'
-            )}
-          </button>
-        )}
       </form>
+
+      {/*
+        * user journey
+        * '/wishlist' (protectedRoute) -->  
+        * '/login' (comes to login page, but thinks to sign up)
+        * clicks Link to sign up
+        * '/signup' after successful signup -->
+        * '/wishlist'
+
+        // if the non-registered user comes from wishlist and then user decides to signup, clicks the link of signup, then pass that '/wishlist' state from loginPage's state to the signup page state, so the signup page can access it and after successful signup, and user goes to wishlist..
+
+        // (locationOfLogin?.state?.from) 
+        // i.e. passing loginPage State to SignupPage State
+      */}
 
       <div>
         <span>
-          ¿No tienes una cuenta?{' '}
+          Don't have an account?{' '}
           <Link
             to='/signup'
             state={{ from: locationOfLogin?.state?.from ?? '/' }}
           >
-            regístrate aquí
+            sign up
           </Link>
         </span>
       </div>

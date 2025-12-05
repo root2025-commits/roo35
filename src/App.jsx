@@ -5,11 +5,12 @@ import { Suspense, lazy } from 'react';
 import { ToastContainer } from 'react-toastify';
 
 import 'react-toastify/dist/ReactToastify.css';
-import { Loader, PrivateRoute } from './frontend/components';
+import { Footer, Loader, PrivateRoute } from './frontend/components';
 
 import {
   ErrorPage,
   LoginPage,
+  // Order,
   SignupPage,
 } from './frontend/pages';
 
@@ -27,12 +28,10 @@ const SingleProductPage = lazy(() =>
 );
 const Address = lazy(() => import('./frontend/pages/Address/Address'));
 const Profile = lazy(() => import('./frontend/pages/Profile/Profile'));
-const CurrencySettings = lazy(() => import('./frontend/pages/CurrencySettings/CurrencySettings'));
 const SharedProfileLayout = lazy(() =>
   import('./frontend/pages/SharedProfileLayout/SharedProfileLayout')
 );
 const Checkout = lazy(() => import('./frontend/pages/Checkout/Checkout'));
-const AdminPanel = lazy(() => import('./frontend/pages/AdminPanel/AdminPanel'));
 
 const Fallback = () => {
   return (
@@ -161,22 +160,7 @@ const App = () => {
                   </Suspense>
                 }
               />
-              <Route
-                path='currency'
-                element={
-                  <Suspense fallback={<Fallback />}>
-                    <CurrencySettings />
-                  </Suspense>
-                }
-              />
-              <Route
-                path='admin'
-                element={
-                  <Suspense fallback={<Fallback />}>
-                    <AdminPanel />
-                  </Suspense>
-                }
-              />
+              {/* <Route path='order' element={<Order />} /> */}
             </Route>
           </Route>
         </Routes>

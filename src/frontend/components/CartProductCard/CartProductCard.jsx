@@ -28,13 +28,6 @@ const CartProductCard = ({ singleCartItem }) => {
   const { _id, name, price, originalPrice, image, qty, colors } =
     singleCartItem;
 
-  // Obtener información de pago
-  const paymentType = singleCartItem.paymentType || 'both';
-  const transferFeePercentage = singleCartItem.transferFeePercentage || 5;
-  
-  // Calcular precio con transferencia para mostrar información completa
-  const transferPrice = price * (1 + transferFeePercentage / 100);
-
   const { color, colorQuantity } = colors[0];
 
   const discountPercent = calculateDiscountPercent(price, originalPrice);
@@ -88,25 +81,9 @@ const CartProductCard = ({ singleCartItem }) => {
                 <Price amount={originalPrice} />
                 <span className={styles.discount}>
                   {' '}
-                  ({discountPercent}% desc.)
+                  ({discountPercent}% off)
                 </span>
               </>
-            )}
-          </div>
-
-          <div className={styles.paymentInfo}>
-            {paymentType === 'cash' && (
-              <span className={styles.paymentCash}>💰 Solo Efectivo</span>
-            )}
-            {paymentType === 'transfer' && (
-              <span className={styles.paymentTransfer}>
-                💳 Solo Transferencia (+{transferFeePercentage}% = <Price amount={transferPrice} showCurrency={false} />)
-              </span>
-            )}
-            {paymentType === 'both' && (
-              <span className={styles.paymentBoth}>
-                💰💳 Efectivo: <Price amount={price} showCurrency={false} /> | Transferencia: <Price amount={transferPrice} showCurrency={false} /> (+{transferFeePercentage}%)
-              </span>
             )}
           </div>
 
@@ -132,7 +109,7 @@ const CartProductCard = ({ singleCartItem }) => {
             <button
               onClick={
                 qty === colorQuantity
-                  ? () => toastHandler(ToastType.Warn, 'Límite de stock excedido')
+                  ? () => toastHandler(ToastType.Warn, 'Stock Limit exceeded')
                   : () => handleQuantityClick(INCREMENT_DECRMENT_TYPE.INCREMENT)
               }
               disabled={isAllBtnsDisabled}
@@ -149,7 +126,7 @@ const CartProductCard = ({ singleCartItem }) => {
           disabled={isAllBtnsDisabled}
           onClick={handleWishlistBtnClick}
         >
-          {isProductInWishlist ? 'Ir a Lista de Deseos' : 'Mover a Lista de Deseos'}
+          {isProductInWishlist ? 'Go to Wishlist' : 'Move to Wishlist'}
         </button>
 
         <button
@@ -157,7 +134,7 @@ const CartProductCard = ({ singleCartItem }) => {
           disabled={isAllBtnsDisabled}
           onClick={handleDeleteFromCart}
         >
-          Remover del Carrito
+          Remove From Cart
         </button>
       </footer>
     </article>

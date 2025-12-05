@@ -14,7 +14,7 @@ import {
 } from '../../utils/utils';
 import { useAllProductsContext } from '../../contexts/ProductsContextProvider';
 import { useAuthContext } from '../../contexts/AuthContextProvider';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 const ProductCard = ({ product }) => {
   const navigate = useNavigate();
@@ -31,31 +31,8 @@ const ProductCard = ({ product }) => {
     removeFromWishlistDispatch,
   } = useAllProductsContext();
 
-  // ESCUCHAR EVENTOS DE SINCRONIZACIÓN PARA ACTUALIZAR PRODUCTOS
-  useEffect(() => {
-    const handleProductSync = (event) => {
-      const { type } = event.detail;
-      if (type === 'products' || type === 'paymentconfig' || type === 'couponproducts') {
-        console.log('📡 Sincronización de productos detectada en ProductCard');
-        // Los productos se actualizarán automáticamente a través del contexto
-      }
-    };
-
-    window.addEventListener('adminPanelSync', handleProductSync);
-
-    return () => {
-      window.removeEventListener('adminPanelSync', handleProductSync);
-    };
-  }, []);
   const { colors, stock } = product;
   const inStock = stock > 0;
-
-  // Obtener información de pago
-  const paymentType = product.paymentType || 'both';
-  const transferFeePercentage = product.transferFeePercentage || 5;
-  
-  // Calcular precio con transferencia para mostrar información completa
-  const transferPrice = product.price * (1 + transferFeePercentage / 100);
 
   const [activeColorObj, setActiveColorObj] = useState(colors[0]);
 
@@ -78,10 +55,10 @@ const ProductCard = ({ product }) => {
   // If card is in wishlist page & product is in cartContext show- "go to cart" else show 'move to cart'
 
   // In productListing page, if this product is in cart- "go to cart" else show 'add to cart'
-  let productBtnText = isCardInWishlistPage ? 'mover al carrito' : 'agregar al carrito';
+  let productBtnText = isCardInWishlistPage ? 'move to cart' : 'add to cart';
 
   if (isProductInCart) {
-    productBtnText = 'ir al carrito';
+    productBtnText = 'go to cart';
   }
 
   const discountPercent = calculateDiscountPercent(
@@ -185,26 +162,10 @@ const ProductCard = ({ product }) => {
           {discountPercent > 0 && (
             <>
               <Price amount={product.originalPrice} />
-              <span className={styles.discount}> ({discountPercent}% desc.)</span>
+              <span className={styles.discount}> ({discountPercent}% off)</span>
             </>
           )}
         </main>
-
-        <div className={styles.paymentInfo}>
-          {paymentType === 'cash' && (
-            <span className={styles.paymentCash}>💰 Solo Efectivo</span>
-          )}
-          {paymentType === 'transfer' && (
-            <span className={styles.paymentTransfer}>
-              💳 Solo Transferencia (+{transferFeePercentage}% = <Price amount={transferPrice} showCurrency={false} />)
-            </span>
-          )}
-          {paymentType === 'both' && (
-            <span className={styles.paymentBoth}>
-              💰💳 Efectivo: <Price amount={product.price} showCurrency={false} /> | Transferencia: <Price amount={transferPrice} showCurrency={false} /> (+{transferFeePercentage}%)
-            </span>
-          )}
-        </div>
 
         <div
           className={

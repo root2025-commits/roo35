@@ -38,7 +38,7 @@ export const toastHandler = (type, message, toastId = uuid()) => {
 };
 
 export const LOGIN_TOAST = () => {
-  toastHandler(ToastType.Warn, 'Por favor inicia sesión para continuar', CUSTOM_TOASTID);
+  toastHandler(ToastType.Warn, 'Please login to continue', CUSTOM_TOASTID);
 };
 
 export const setIntoLocalStorage = (name, dataObj) => {
@@ -76,11 +76,10 @@ export const givePaginatedList = (list) => {
   );
 };
 
-// FUNCIÓN DE FORMATEO DE PRECIO REMOVIDA - AHORA SE USA EL CONTEXTO DE MONEDA
-// export const formatPrice = (price) =>
-//   price.toLocaleString('es-CU', {
-//     maximumFractionDigits: 2,
-//   });
+export const formatPrice = (price) =>
+  price.toLocaleString('en-IN', {
+    maximumFractionDigits: 2,
+  });
 
 export const Popper = () => {
   const end = Date.now() + 1 * 1000;
@@ -137,11 +136,4 @@ export const validateEmptyTextInput = ({ inputsObj, optionalInput }) => {
   }
 
   return false;
-};
-
-// Generar número de orden aleatorio
-export const generateOrderNumber = () => {
-  const timestamp = Date.now().toString().slice(-6);
-  const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-  return `ORD${timestamp}${random}`;
 };
