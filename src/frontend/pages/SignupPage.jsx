@@ -66,8 +66,8 @@ const SignupPage = () => {
       // if user directly comes to '/signup' from url, so state will be null, after successful registration, user should be directed to home page
       navigate(signupPageLocation?.state?.from ?? '/');
     } catch (error) {
-      toastHandler(ToastType.Error, error.response.data.errors[0]);
-      console.error(error.response);
+      const errorText = error?.response?.data?.errors?.[0] || 'Signup failed. Please try again.';
+      toastHandler(ToastType.Error, errorText);
     }
 
     setIsSignupFormLoading(false);

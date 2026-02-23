@@ -67,7 +67,7 @@ const LoginPage = () => {
       // if non-registered user comes from typing '/login' at the url, after success redirect it to '/'
       navigate(locationOfLogin?.state?.from ?? '/');
     } catch ({ response }) {
-      const errorText = response?.data?.errors[0].split('.')[0];
+      const errorText = response?.data?.errors?.[0]?.split?.('.')?.[0] || 'Login failed. Please try again.';
       toastHandler(ToastType.Error, errorText);
     }
 
