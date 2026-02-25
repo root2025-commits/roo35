@@ -40,6 +40,33 @@ export const TEST_USER = {
   password: 'babitaji1234',
 };
 
+export const GUEST_USERS = [
+  {
+    email: 'jethalal.gada@gmail.com',
+    password: 'babitaji1234',
+    firstName: 'Jethalal',
+    lastName: 'Gada'
+  },
+  {
+    email: 'usuario@gmail.com',
+    password: '123456',
+    firstName: 'Usuario',
+    lastName: 'Invitado'
+  },
+  {
+    email: 'test@hotmail.com',
+    password: 'password',
+    firstName: 'Test',
+    lastName: 'User'
+  },
+  {
+    email: 'demo@yahoo.com',
+    password: 'demo123',
+    firstName: 'Demo',
+    lastName: 'User'
+  }
+];
+
 export const LOCAL_STORAGE_KEYS = {
   User: 'user',
   Token: 'token',
@@ -153,3 +180,5 @@ export const CHARGE_AND_DISCOUNT = {
 export const MIN_DISTANCE_BETWEEN_THUMBS = 1000;
 
 export const MAX_RESPONSES_IN_CACHE_TO_STORE = 50;
+
+export const JWT_SECRET = 'Jai Radha Madhav';

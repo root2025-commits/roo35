@@ -1,4 +1,4 @@
-import { Categories, FeaturedProducts, Hero } from '../components';
+import { Categories, FeaturedProducts, Hero, NewestProduct } from '../components';
 import { useAllProductsContext } from '../contexts/ProductsContextProvider';
 
 const Home = () => {
@@ -8,9 +8,12 @@ const Home = () => {
     return <main className='full-page'></main>;
   }
 
+  const newestProduct = productsFromContext[productsFromContext.length - 1];
+
   return (
     <main>
       <Hero />
+      <NewestProduct product={newestProduct} />
       <Categories />
       <FeaturedProducts />
     </main>
